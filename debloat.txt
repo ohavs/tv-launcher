@@ -22,3 +22,9 @@ com.google.android.marvin.talkback           # TalkBack (only if no accessibilit
 # com.google.android.apps.tv.dreamx          # Ambient mode + Google Home panel (~300 MB); falls back to basic screensaver
 # com.google.android.tungsten.setupwraith    # only if switching Home to Projectivy (hijacks Home button)
 # com.google.android.apps.tv.launcherx       # stock launcher; only if Projectivy becomes Home
+
+# --- USER APPS (disabled on request, 2026-10-24) ---
+com.iqiyi.i18n.tv                            # iQIYI
+com.disneyplus.mea                           # Disney+
+com.apple.atve.androidtv.appletv             # Apple TV
+# Uninstalled on request (reinstall from Play): com.spocky.projengmenu (Projectivy), com.surfshark.vpnclient.android

@@ -24,7 +24,6 @@ class HomeController(private val activity: ComponentActivity) {
 
     var apps by mutableStateOf<List<AppEntry>>(emptyList())
         private set
-    var videoEnabled by mutableStateOf(prefs.videoEnabled)
     /** Bumped when Home/Back is pressed on the home screen: scroll to top. */
     var homeSignal by mutableIntStateOf(0)
     /** Bumped each time the launcher becomes visible again (shelf refresh). */
@@ -38,7 +37,6 @@ class HomeController(private val activity: ComponentActivity) {
     }
 
     fun onResume() {
-        videoEnabled = prefs.videoEnabled
         shelf.invalidate()
         resumeSignal++
         if (all.isNotEmpty()) apps = prefs.arrange(all)

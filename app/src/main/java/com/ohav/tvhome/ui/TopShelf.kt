@@ -63,7 +63,7 @@ data class ShelfState(val app: AppEntry?, val items: List<ShelfItem>)
 
 /**
  * The area above the first row. Shows what the focused first-row app publishes
- * (continue watching + preview channels); empty apps leave the aerial in full view.
+ * (continue watching + preview channels); empty apps leave the wallpaper in full view.
  */
 @Composable
 fun TopShelf(

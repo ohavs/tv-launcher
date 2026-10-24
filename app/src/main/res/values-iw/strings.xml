@@ -16,13 +16,14 @@
     <string name="installing">מתקין…</string>
     <string name="update_error">שגיאה: %1$s</string>
     <string name="allow_unknown">יש לאשר התקנה מהאפליקציה הזו ולנסות שוב</string>
-    <string name="video_bg">וידאו Aerial ברקע</string>
+    <string name="home_key">כפתור Home פותח את TV Home</string>
+    <string name="home_key_desc">פותח את TV Home בלחיצה על Home בשלט (לחיצה ארוכה: לוח הבקרה של Google TV).</string>
     <string name="on">פועל</string>
     <string name="off">כבוי</string>
     <string name="hidden_apps">אפליקציות מוסתרות</string>
     <string name="hidden_none">אין אפליקציות מוסתרות</string>
     <string name="unhide">לחץ כדי להחזיר</string>
     <string name="system_settings">הגדרות מערכת</string>
-    <string name="credits">קרדיטים לסרטוני הרקע</string>
+    <string name="credits">קרדיטים לתמונות הרקע</string>
     <string name="version">גרסה %1$s</string>
 </resources>

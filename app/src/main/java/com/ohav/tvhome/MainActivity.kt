@@ -14,7 +14,9 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.ohav.tvhome.settings.SettingsActivity
 import com.ohav.tvhome.ui.HomeScreen
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     private lateinit var home: HomeController
@@ -50,6 +52,11 @@ class MainActivity : ComponentActivity() {
         if (checkSelfPermission(TV_LISTINGS) != PackageManager.PERMISSION_GRANTED) listingsPermission.launch(TV_LISTINGS)
         home.repo.packagesChanged(home.prefs)
         lifecycleScope.launch { home.reload() }
+        lifecycleScope.launch(Dispatchers.IO) {
+            // Leftovers from the aerial-video versions (<= 1.0.3).
+            File(noBackupFilesDir, "aerials").deleteRecursively()
+            deleteDatabase("exoplayer_internal.db")
+        }
         setContent {
             HomeScreen(home, openSettings = { startActivity(Intent(this, SettingsActivity::class.java)) })
         }

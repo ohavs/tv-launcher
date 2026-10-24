@@ -1,5 +1,5 @@
 @echo off
-rem Back to the stock Google TV home screen (re-enables it, turns off other launchers' overrides)
+rem Back to the stock Google TV home screen (turns off TV Home's Home-button service)
 set ADB=%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe
 set TV=10.0.0.43:5555
 "%ADB%" connect %TV%

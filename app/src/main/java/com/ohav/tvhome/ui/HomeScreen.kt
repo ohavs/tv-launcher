@@ -4,7 +4,6 @@ import android.content.Intent
 import android.provider.Settings
 import android.text.format.DateFormat
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateIntOffsetAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -43,9 +42,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -68,7 +65,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.ohav.tvhome.HomeController
 import com.ohav.tvhome.R
-import com.ohav.tvhome.aerial.AerialBackground
 import com.ohav.tvhome.data.AppEntry
 import com.ohav.tvhome.data.ShelfItem
 import kotlinx.coroutines.delay
@@ -104,7 +100,6 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
     var lastIndex by remember { mutableIntStateOf(0) }
     var menuApp by remember { mutableStateOf<AppEntry?>(null) }
     var movingId by remember { mutableStateOf<String?>(null) }
-    var videoFailed by remember { mutableStateOf(false) }
     val scroll = rememberScrollState()
 
     fun focusIndex(i: Int) {
@@ -181,22 +176,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                 }
             }
 
-            // Background: aerial video, or a soft glow in the focused app's colour.
-            val accent by animateColorAsState(
-                apps.firstOrNull { it.id == focusedId }?.accent ?: Color(0xFF1E2A3A), tween(900), label = "accent",
-            )
-            if (home.videoEnabled && !videoFailed) {
-                AerialBackground(onUnavailable = { videoFailed = true })
-            } else {
-                Box(Modifier.fillMaxSize().drawBehind {
-                    drawRect(Color(0xFF05070A))
-                    drawRect(Brush.radialGradient(
-                        listOf(accent.copy(alpha = 0.75f), accent.copy(alpha = 0.18f), Color.Transparent),
-                        center = Offset(size.width * 0.3f, size.height * 0.05f),
-                        radius = size.width * 0.85f,
-                    ))
-                })
-            }
+            WallpaperBackground()
             // Scrims: top for the clock, bottom for the rows, plus a dim that grows as you scroll into the grid.
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
                 0f to Color.Black.copy(alpha = 0.35f), 0.18f to Color.Transparent,

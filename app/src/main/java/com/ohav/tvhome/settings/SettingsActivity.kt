@@ -34,9 +34,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.ohav.tvhome.BuildConfig
 import com.ohav.tvhome.R
-import com.ohav.tvhome.aerial.Aerials
+import com.ohav.tvhome.HomeKeyService
+import com.ohav.tvhome.ui.WALLPAPERS
 import com.ohav.tvhome.data.AppRepository
 import com.ohav.tvhome.data.Prefs
 import com.ohav.tvhome.ui.MenuColumn
@@ -69,7 +71,7 @@ private fun SettingsScreen() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val prefs = remember { Prefs(context) }
-    var video by remember { mutableStateOf(prefs.videoEnabled) }
+    var homeKey by remember { mutableStateOf(HomeKeyService.isEnabled(context)) }
     var hidden by remember { mutableStateOf(prefs.hidden) }
     var update by remember { mutableStateOf<UpdateUi>(UpdateUi.Idle) }
     var showCredits by remember { mutableStateOf(false) }
@@ -100,6 +102,11 @@ private fun SettingsScreen() {
                 UpdateManager.install(context, apk)
             }.onFailure { update = UpdateUi.Failed(it.message ?: it.javaClass.simpleName) }
         }
+    }
+
+    LifecycleResumeEffect(Unit) {
+        homeKey = HomeKeyService.isEnabled(context)
+        onPauseOrDispose { }
     }
 
     LaunchedEffect(Unit) {
@@ -140,11 +147,10 @@ private fun SettingsScreen() {
                         }
                     }
                     MenuRow(
-                        stringResource(R.string.video_bg),
-                        value = stringResource(if (video) R.string.on else R.string.off),
+                        stringResource(R.string.home_key),
+                        value = stringResource(if (homeKey) R.string.on else R.string.off),
                     ) {
-                        video = !video
-                        prefs.videoEnabled = video
+                        runCatching { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
                     }
                     MenuRow(stringResource(R.string.system_settings)) {
                         runCatching { context.startActivity(Intent(Settings.ACTION_SETTINGS)) }
@@ -165,8 +171,8 @@ private fun SettingsScreen() {
                     SectionTitle(stringResource(R.string.credits))
                     MenuRow(stringResource(R.string.credits), value = if (showCredits) "▲" else "▼") { showCredits = !showCredits }
                     if (showCredits) {
-                        Aerials.clips.distinctBy { it.place + it.credit }.forEach {
-                            Text("${it.place} — ${it.credit}", color = Color.White.copy(alpha = 0.6f), fontSize = 15.sp, modifier = Modifier.padding(start = 6.dp))
+                        WALLPAPERS.forEach {
+                            Text("${it.title} — ${it.credit}", color = Color.White.copy(alpha = 0.6f), fontSize = 15.sp, modifier = Modifier.padding(start = 6.dp))
                         }
                         Text("Wikimedia Commons", color = Color.White.copy(alpha = 0.4f), fontSize = 14.sp, modifier = Modifier.padding(start = 6.dp, bottom = 40.dp))
                     }

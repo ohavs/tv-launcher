@@ -16,13 +16,14 @@
     <string name="installing">Installing…</string>
     <string name="update_error">Error: %1$s</string>
     <string name="allow_unknown">Allow installs from this app, then try again</string>
-    <string name="video_bg">Aerial video background</string>
+    <string name="home_key">Home button opens TV Home</string>
+    <string name="home_key_desc">Opens TV Home when you press Home on the remote (long press: Google TV dashboard).</string>
     <string name="on">On</string>
     <string name="off">Off</string>
     <string name="hidden_apps">Hidden apps</string>
     <string name="hidden_none">No hidden apps</string>
     <string name="unhide">Press to show again</string>
     <string name="system_settings">System settings</string>
-    <string name="credits">Video credits</string>
+    <string name="credits">Wallpaper credits</string>
     <string name="version">Version %1$s</string>
 </resources>

@@ -13,10 +13,6 @@ class Prefs(context: Context) {
         get() = sp.getStringSet("hidden", emptySet())!!.toSet()
         set(v) = sp.edit().putStringSet("hidden", v).apply()
 
-    var videoEnabled: Boolean
-        get() = sp.getBoolean("video", true)
-        set(v) = sp.edit().putBoolean("video", v).apply()
-
     var packageSequence: Int
         get() = sp.getInt("pkgSeq", 0)
         set(v) = sp.edit().putInt("pkgSeq", v).apply()
