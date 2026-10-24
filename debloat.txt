@@ -1,0 +1,24 @@
+# Google TV Streamer (kirkwood), Android 14, build UTTK.260317.003
+# Apply ONLY after approval. Method: pm disable-user --user 0 <pkg>  (never uninstall)
+# Undo: pm enable <pkg>
+# Already disabled before we started: com.google.android.tvrecommendations, com.google.android.videos,
+#   com.google.android.apps.education.cast2class
+
+# --- SAFE ---
+android.autoinstalls.config.google.sabrina   # silently installs promoted apps
+com.google.android.play.games                # Play Games (~98 MB RAM while running)
+com.google.android.feedback                  # Google feedback reporter
+com.android.tv.feedbackconsent               # feedback consent dialog
+com.google.android.tv.remotecontrol.logging  # remote-control telemetry
+com.android.gallery3d                        # local photo gallery
+com.android.htmlviewer                       # HTML viewer (license pages)
+com.android.wallpaperpicker                  # wallpaper picker, unused on TV
+com.android.dynsystem                        # Dynamic System Updates (dev feature)
+com.google.android.syncadapters.calendar     # Google Calendar sync
+com.google.android.marvin.talkback           # TalkBack (only if no accessibility needed)
+
+# --- OPTIONAL (depends on usage, ask) ---
+# com.google.android.apps.mediashell         # Chromecast built-in / casting from phone (~118 MB)
+# com.google.android.apps.tv.dreamx          # Ambient mode + Google Home panel (~300 MB); falls back to basic screensaver
+# com.google.android.tungsten.setupwraith    # only if switching Home to Projectivy (hijacks Home button)
+# com.google.android.apps.tv.launcherx       # stock launcher; only if Projectivy becomes Home

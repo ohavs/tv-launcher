@@ -1,0 +1,21 @@
+# Build
+.gradle/
+build/
+app/build/
+.kotlin/
+local.properties
+*.apk
+*.aab
+
+# IDE
+.idea/
+*.iml
+
+# Signing & secrets
+keystore.properties
+*.jks
+*.keystore
+.env
+
+# Device dumps (contain device identifiers)
+backup/

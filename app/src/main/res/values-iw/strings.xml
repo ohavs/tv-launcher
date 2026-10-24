@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TV Home</string>
+    <string name="home_settings">הגדרות מסך הבית</string>
+    <string name="menu_move">הזזה</string>
+    <string name="menu_hide">הסתרה</string>
+    <string name="menu_info">פרטי האפליקציה</string>
+    <string name="menu_cancel">ביטול</string>
+    <string name="move_hint">חצים להזזה · OK לסיום</string>
+    <string name="settings_title">הגדרות מסך הבית</string>
+    <string name="check_updates">בדוק עדכונים</string>
+    <string name="checking">בודק…</string>
+    <string name="up_to_date">הגרסה עדכנית (%1$s)</string>
+    <string name="update_available">גרסה %1$s זמינה · לחץ להתקנה</string>
+    <string name="downloading">מוריד… %1$d%%</string>
+    <string name="installing">מתקין…</string>
+    <string name="update_error">שגיאה: %1$s</string>
+    <string name="allow_unknown">יש לאשר התקנה מהאפליקציה הזו ולנסות שוב</string>
+    <string name="video_bg">וידאו Aerial ברקע</string>
+    <string name="on">פועל</string>
+    <string name="off">כבוי</string>
+    <string name="hidden_apps">אפליקציות מוסתרות</string>
+    <string name="hidden_none">אין אפליקציות מוסתרות</string>
+    <string name="unhide">לחץ כדי להחזיר</string>
+    <string name="system_settings">הגדרות מערכת</string>
+    <string name="credits">קרדיטים לסרטוני הרקע</string>
+    <string name="version">גרסה %1$s</string>
+</resources>
