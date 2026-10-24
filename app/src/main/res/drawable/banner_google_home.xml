@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 16:9 banner for the Google Home panel shortcut -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp" android:height="180dp">
+    <item>
+        <shape><solid android:color="#FFFFFFFF" /></shape>
+    </item>
+    <item android:gravity="center" android:width="84dp" android:height="84dp">
+        <vector android:width="84dp" android:height="84dp" android:viewportWidth="24" android:viewportHeight="24">
+            <path android:fillColor="#FF4285F4" android:pathData="M12,3L2,11.5h3V21h5v-6h4v6h5v-9.5h3L12,3z" />
+            <path android:fillColor="#FFFBBC04" android:pathData="M12,3L2,11.5h3L12,5.6z" />
+            <path android:fillColor="#FFEA4335" android:pathData="M12,3l10,8.5h-3L12,5.6z" />
+            <path android:fillColor="#FF34A853" android:pathData="M10,15h4v6h-4z" />
+        </vector>
+    </item>
+</layer-list>

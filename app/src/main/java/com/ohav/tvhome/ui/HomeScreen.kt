@@ -1,5 +1,7 @@
 package com.ohav.tvhome.ui
 
+import android.content.Intent
+import android.provider.Settings
 import android.text.format.DateFormat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -152,6 +154,12 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                         if (ev.type == KeyEventType.KeyUp) openSettings()
                         return@onPreviewKeyEvent true
                     }
+                    if (ev.key == Key.Settings) {
+                        if (ev.type == KeyEventType.KeyUp) runCatching {
+                            context.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        }
+                        return@onPreviewKeyEvent true
+                    }
                     false
                 }
         ) {
@@ -247,9 +255,9 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
 
             AnimatedVisibility(
                 visible = movingId != null,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it },
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 36.dp),
+                enter = fadeIn() + slideInVertically { -it },
+                exit = fadeOut() + slideOutVertically { -it },
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 26.dp),
             ) {
                 Text(
                     stringResource(R.string.move_hint),

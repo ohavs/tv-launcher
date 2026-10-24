@@ -6,12 +6,14 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
+import androidx.annotation.DrawableRes
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.graphics.scale
+import com.ohav.tvhome.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -24,12 +26,20 @@ data class AppEntry(
     val banner: ImageBitmap?,
     val icon: ImageBitmap?,
     val accent: Color,
+    /** Set for system shortcuts that open by action rather than as a launcher entry. */
+    val action: String? = null,
 ) {
-    fun launchIntent(): Intent = Intent(Intent.ACTION_MAIN)
-        .addCategory(category)
+    fun launchIntent(): Intent = (if (action != null) Intent(action) else Intent(Intent.ACTION_MAIN).addCategory(category))
         .setComponent(component)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
 }
+
+/** System screens that only the stock launcher used to link to. */
+private data class Shortcut(val id: String, val action: String, val label: String, @DrawableRes val banner: Int)
+
+private val SHORTCUTS = listOf(
+    Shortcut("shortcut:google-home", "com.google.android.libraries.tv.smarthome.intent.action.OPEN_SMART_HOME", "Google Home", R.drawable.banner_google_home),
+)
 
 class AppRepository(private val context: Context) {
     private val pm = context.packageManager
@@ -52,6 +62,21 @@ class AppRepository(private val context: Context) {
                 if (category == Intent.CATEGORY_LAUNCHER && ai.packageName in tvPackages) continue
                 out += runCatching { entryFor(ai, category) }.getOrNull() ?: continue
             }
+        }
+        for (sc in SHORTCUTS) {
+            val ai = pm.resolveActivity(Intent(sc.action), 0)?.activityInfo ?: continue
+            val banner = renderBanner(context.getDrawable(sc.banner)!!)
+            out += AppEntry(
+                id = sc.id,
+                packageName = ai.packageName,
+                component = ComponentName(ai.packageName, ai.name),
+                category = Intent.CATEGORY_DEFAULT,
+                label = sc.label,
+                banner = banner.asImageBitmap(),
+                icon = null,
+                accent = accentOf(banner),
+                action = sc.action,
+            )
         }
         out.distinctBy { it.id }
     }
