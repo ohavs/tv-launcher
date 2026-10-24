@@ -36,6 +36,11 @@
 - Non-privileged callers: no selection allowed → query all, filter in code. Preview channels exist for YouTube,
   Prime, Spotify, Stremio, SmartTube; Netflix uses Watch Next.
 
+## Spotify Connect gotcha
+- Spotify TV app runs a BLE GATT server + DIAL for Spotify Connect; nearby phones on the same account connect and
+  can start playback on the Streamer (even with the TV off). Seen 2026-10-24 after a `monkey` test started playback.
+- Fix: `am force-stop com.spotify.tv.android` (stays stopped until opened/cast) + user picks "This phone" in Spotify.
+
 ## Audio
 - HDMI is a *full-volume* device; `mHdmiCecVolumeControlEnabled=false`; no absolute-volume devices.
   TV volume is changed by the remote's IR. Volume from phone needs HDMI-CEC volume control (untested).
