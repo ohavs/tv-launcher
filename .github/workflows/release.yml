@@ -3,6 +3,12 @@ name: Build & Release APK
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'tools/**'
+      - '*.cmd'
+      - 'debloat.txt'
   workflow_dispatch:
 
 permissions:

@@ -57,3 +57,19 @@
 ## איכות
 - commit קטן ותיאורי אחרי כל שלב עובד.
 - לא להשאיר TODO שקטים — מה שלא הושלם נכנס ל-`PROGRESS.md`.
+
+<!-- ===== PROJECT SECTION — intentional. When syncing from the global CLAUDE.md, replace ONLY the text above this line. ===== -->
+
+## פרויקט: TV Home (לאנצ'ר Google TV + אפליקציית טלפון)
+
+### פרוטוקול סשן (לחסכון בטוקנים)
+1. בתחילת סשן: לקרוא רק `PROGRESS.md` ואת `docs/ROADMAP.md` (השלב הראשון שלא ✅). `docs/DEV-NOTES.md` — רק את הסעיף הרלוונטי, כשנוגעים בתחום.
+2. לעבוד על שלב אחד בלבד. לא לקרוא קבצים שלא צריך לשלב.
+3. בדיקה על הטלוויזיה האמיתית (`10.0.0.43:5555`) לפני דיווח. מקשי שלט אמיתיים — דרך `tools/hid` (לא `input keyevent`). **אסור `monkey`.**
+4. סיום שלב: commit → push → CI ירוק → release → בדיקת "בדוק עדכונים" → לסמן ✅ ב-ROADMAP, לעדכן `PROGRESS.md` (Now/Last session) ועובדות חדשות ב-DEV-NOTES → להגיד "זה הזמן ל-/clear".
+5. פעולות ידניות של המשתמש — הודעה אחת מרוכזת בתחילת השלב.
+
+### עקרונות
+- ביצועים קודם: התקציב ב-ROADMAP ("תקציב ביצועים"). כל פיצ'ר כבד — ניתן לכיבוי, בתהליך נפרד או lazy.
+- `launcherx` נשאר פעיל תמיד (Google Home תלוי בו). שינויים בשירות הנגישות — לבדוק Home + כפתור Google Home עם `tools/hid`.
+- build מקומי: `BUILD_NUMBER=<מספר ריצת ה-CI הבאה>`.
