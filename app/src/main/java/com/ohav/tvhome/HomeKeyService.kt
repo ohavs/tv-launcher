@@ -15,6 +15,10 @@ import android.view.accessibility.AccessibilityEvent
  * launcher must stay enabled (the Google Home panel and the dashboard depend on its services).
  * This service takes over the Home key: short press opens TV Home, long press opens the
  * Google TV dashboard. If the stock home still surfaces (e.g. after boot) we bounce to TV Home.
+ *
+ * It also handles the remote's Google Home button (MACRO_1): the stock launcher's background
+ * service would open the panel, but Android blocks that launch while its home isn't visible.
+ * Accessibility services are exempt, so we open (or close) the panel ourselves.
  */
 class HomeKeyService : AccessibilityService() {
     private val handler = Handler(Looper.getMainLooper())
@@ -26,6 +30,7 @@ class HomeKeyService : AccessibilityService() {
     }
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
+        if (event.keyCode == KeyEvent.KEYCODE_MACRO_1) return onGoogleHomeKey(event)
         if (event.keyCode != KeyEvent.KEYCODE_HOME) return false
         when (event.action) {
             KeyEvent.ACTION_DOWN -> if (!homeDown) {
@@ -42,9 +47,21 @@ class HomeKeyService : AccessibilityService() {
         return true
     }
 
+    private fun onGoogleHomeKey(event: KeyEvent): Boolean {
+        val open = Intent(SMART_HOME_ACTION).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (open.resolveActivity(packageManager) == null) return false
+        if (event.action == KeyEvent.ACTION_UP) {
+            val active = runCatching { rootInActiveWindow?.packageName?.toString() }.getOrNull()
+            if (active == SMART_HOME_PACKAGE) performGlobalAction(GLOBAL_ACTION_BACK) else runCatching { startActivity(open) }
+        }
+        return true
+    }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
-        if (event.packageName == STOCK_PACKAGE && event.className?.toString() == STOCK_HOME) goHome()
+        val pkg = event.packageName?.toString() ?: return
+        val cls = event.className?.toString().orEmpty()
+        if (pkg == STOCK_PACKAGE && cls == STOCK_HOME) goHome()
     }
 
     override fun onInterrupt() = Unit
@@ -62,6 +79,8 @@ class HomeKeyService : AccessibilityService() {
         private const val LONG_PRESS_MS = 600L
         const val STOCK_PACKAGE = "com.google.android.apps.tv.launcherx"
         const val STOCK_HOME = "com.google.android.apps.tv.launcherx.home.HomeActivity"
+        private const val SMART_HOME_PACKAGE = "com.google.android.apps.tv.dreamx"
+        private const val SMART_HOME_ACTION = "com.google.android.libraries.tv.smarthome.intent.action.OPEN_SMART_HOME"
 
         fun isEnabled(context: Context): Boolean {
             val me = ComponentName(context, HomeKeyService::class.java).flattenToString()
