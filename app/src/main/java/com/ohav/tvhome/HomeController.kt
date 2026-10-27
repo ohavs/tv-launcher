@@ -25,6 +25,7 @@ import com.ohav.tvhome.data.WeatherApi
 import com.ohav.tvhome.data.WeatherNow
 import com.ohav.tvhome.data.cityOf
 import com.ohav.tvhome.media.NowPlaying
+import com.ohav.tvhome.youtube.YouTubeActivity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -88,11 +89,11 @@ class HomeController(private val activity: ComponentActivity) {
         }
     }
 
-    fun launch(app: AppEntry, from: Rect) = start(app.launchIntent(), from)
+    fun launch(app: AppEntry, from: Rect) = start(YouTubeActivity.redirect(activity, app.launchIntent()), from)
 
     fun open(item: ShelfItem, from: Rect) {
         val intent = ShelfRepository.launchIntent(item) ?: return
-        start(intent, from)
+        start(YouTubeActivity.redirect(activity, intent), from)
     }
 
     fun openSmartHome(from: Rect) {

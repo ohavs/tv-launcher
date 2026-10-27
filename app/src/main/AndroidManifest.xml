@@ -105,6 +105,19 @@
             android:screenOrientation="landscape"
             android:theme="@style/Theme.TvHome" />
 
+        <!-- YouTube on TV in a WebView; its own process and task, so closing it frees everything. -->
+        <activity
+            android:name=".youtube.YouTubeActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode|density|locale|layoutDirection"
+            android:exported="true"
+            android:hardwareAccelerated="true"
+            android:label="YouTube"
+            android:launchMode="singleTask"
+            android:process=":yt"
+            android:screenOrientation="landscape"
+            android:taskAffinity="com.ohav.tvhome.youtube"
+            android:theme="@style/Theme.TvHome" />
+
         <receiver
             android:name=".update.InstallResultReceiver"
             android:exported="false" />

@@ -71,4 +71,9 @@
     <string name="layout_classic">Classic</string>
     <string name="layout_cinema">Cinematic</string>
     <string name="continue_item">Continue: %1$s</string>
+    <string name="youtube">YouTube</string>
+    <string name="yt_own">Ad-free YouTube (tile and remote button)</string>
+    <string name="yt_sponsorblock">Skip sponsors (SponsorBlock)</string>
+    <string name="yt_skipped_sponsor">Skipped sponsor</string>
+    <string name="yt_skipped_selfpromo">Skipped self-promotion</string>
 </resources>

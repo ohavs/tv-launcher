@@ -90,6 +90,8 @@ private fun SettingsScreen() {
     var cityId by remember { mutableStateOf(prefs.cityId) }
     var showCities by remember { mutableStateOf(false) }
     var mediaAccess by remember { mutableStateOf(false) }
+    var ownYouTube by remember { mutableStateOf(prefs.ownYouTube) }
+    var sponsorBlock by remember { mutableStateOf(prefs.sponsorBlock) }
     val cams = remember { CameraPrefs(context) }
     var camEnabled by remember { mutableStateOf(cams.enabled) }
     var camHost by remember { mutableStateOf(cams.host) }
@@ -247,6 +249,18 @@ private fun SettingsScreen() {
                         stringResource(R.string.media_access),
                         value = stringResource(if (mediaAccess) R.string.allowed else R.string.not_allowed),
                     ) { }
+
+                    SectionTitle(stringResource(R.string.youtube))
+                    MenuRow(stringResource(R.string.yt_own), value = stringResource(if (ownYouTube) R.string.on else R.string.off)) {
+                        ownYouTube = !ownYouTube
+                        prefs.ownYouTube = ownYouTube
+                    }
+                    if (ownYouTube) {
+                        MenuRow(stringResource(R.string.yt_sponsorblock), value = stringResource(if (sponsorBlock) R.string.on else R.string.off)) {
+                            sponsorBlock = !sponsorBlock
+                            prefs.sponsorBlock = sponsorBlock
+                        }
+                    }
 
                     SectionTitle(stringResource(R.string.cameras))
                     MenuRow(stringResource(R.string.camera_on_dashboard), value = stringResource(if (camEnabled) R.string.on else R.string.off)) {

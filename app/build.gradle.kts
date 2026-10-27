@@ -85,5 +85,6 @@ dependencies {
     implementation("androidx.core:core-ktx:1.17.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.4")
     implementation("androidx.media3:media3-exoplayer:1.8.0")
+    implementation("androidx.webkit:webkit:1.14.0")
     implementation("androidx.media3:media3-exoplayer-rtsp:1.8.0")
 }

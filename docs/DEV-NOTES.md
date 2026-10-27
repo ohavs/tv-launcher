@@ -14,6 +14,23 @@
 
 ## YouTube
 - `youtube.com/tv` serves "YouTube on TV" (leanback/kabuki) when the UA is a TV/Cobalt UA.
+- Ours (L4, `YouTubeActivity`, `:yt` process): WebView 155 + **Cobalt UA** (Google_ATV_kirkwood). A webOS UA gets
+  "sign in to confirm you're not a bot" even as guest — keep Cobalt. Viewport 960x540 @ DPR 2 looks right.
+- InnerTube responses arrive by XHR (`responseType ''`) + `JSON.parse` → the `JSON.parse` hook in
+  `assets/youtube/tvhome.js` empties `adPlacements`/`adSlots` (verified: raw had 2/3, video starts with no ad).
+  Calling `/youtubei/v1/player` ourselves from the page → LOGIN_REQUIRED (needs the app's attestation).
+- **Many videos are Widevine-DRM'd for TV clients.** The player asks EME for `HW_SECURE_ALL`/`SW_SECURE_DECODE` and
+  Cobalt-only MIME params (`enableflushduringseek=true`); WebView supports only `SW_SECURE_CRYPTO` → "This video
+  format is not supported". Fix in tvhome.js: retry with plain MIME + SW_SECURE_CRYPTO and report the requested
+  config back from `getConfiguration()`. Result: DRM'd videos play at **720p max** (L3); non-DRM get 1080p AV1
+  (`c2.mtk.av1.decoder`), 0 dropped frames.
+- Keys: BACK → we send ESCAPE (the app's back: closes panels, then "exit"); `window.close` → finish().
+  `KEYCODE_MEDIA_PLAY_PAUSE` reaches the page (179). The Streamer remote has **no** play/pause key (kl file).
+- Remote YouTube/Netflix buttons (BUTTON_3/BUTTON_4): launcherx `GlobalKeyListener` launches the app from the
+  background → **BAL-blocked** whenever TV Home (or any app) is in front. `HomeKeyService` launches them itself.
+- `:yt` ~93 MB PSS + renderer ~196 MB RSS while playing. Home → audio stops; reopening resumes playback.
+- Debug: `adb shell setprop log.tag.YouTube DEBUG` (then reopen) → page console in logcat + DevTools;
+  `python tools/cdp.py "<js>"` evaluates in the page (`--reload "<pre-script>" "<url>" "<js>"` for load-time hooks).
 - SmartTube **27.99** is installed (`com.teamsmart.videomanager.tv`, June 2025) — older than the Dec 2025 key compromise
   (bad builds 30.43/30.47; clean builds from 30.56 have a new package). User doesn't want to sign in to it.
 

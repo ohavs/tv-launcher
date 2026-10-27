@@ -29,6 +29,15 @@ class Prefs(context: Context) {
         get() = sp.getString("city", CITIES.first().id)!!
         set(v) = sp.edit().putString("city", v).apply()
 
+    /** YouTube tile, YouTube content and the remote's YouTube button open our ad-free player. */
+    var ownYouTube: Boolean
+        get() = sp.getBoolean("ownYouTube", true)
+        set(v) = sp.edit().putBoolean("ownYouTube", v).apply()
+
+    var sponsorBlock: Boolean
+        get() = sp.getBoolean("sponsorBlock", true)
+        set(v) = sp.edit().putBoolean("sponsorBlock", v).apply()
+
     var weather: WeatherNow?
         get() = sp.getString("weather", null)?.let { WeatherNow.fromJson(it) }
         set(v) = sp.edit().putString("weather", v?.toJson()).apply()
