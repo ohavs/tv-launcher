@@ -1,10 +1,10 @@
 package com.ohav.tvhome.ui
 
-import android.graphics.SurfaceTexture
 import android.os.Handler
 import android.os.Looper
 import android.view.Surface
-import android.view.TextureView
+import android.view.SurfaceHolder
+import android.view.SurfaceView
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -53,17 +53,18 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
-/** Holds the TextureView's SurfaceTexture; released only once the camera process has let go of it. */
-private class TextureSlot {
-    var texture by mutableStateOf<SurfaceTexture?>(null)
-    var inUse = false
-    var orphan: SurfaceTexture? = null
+/** The SurfaceView's Surface while it exists, and how to let go of it before it's destroyed. */
+private class SurfaceSlot {
+    var surface by mutableStateOf<Surface?>(null)
+    var release: (() -> Unit)? = null
 }
 
 /**
  * Live view of one camera channel. Decoding happens in the `:camera` process; it starts a moment after
  * the home screen shows (so it never slows the launch) and stops whenever the launcher is not visible.
- * Each card on screen uses its own [slot] in the camera service.
+ * Video goes to a SurfaceView, which the hardware composer layers under the window: a TextureView would
+ * redraw the whole home screen on every video frame. Each card on screen uses its own [slot] in the
+ * camera service.
  */
 @Composable
 fun CameraCard(
@@ -77,7 +78,7 @@ fun CameraCard(
     height: Dp,
 ) {
     val context = LocalContext.current
-    val tex = remember { TextureSlot() }
+    val view = remember { SurfaceSlot() }
     var state by remember { mutableIntStateOf(CAM_CONNECTING) }
     var started by remember { mutableStateOf(false) }
     val url = config.url(channel, sub = true)
@@ -99,54 +100,51 @@ fun CameraCard(
         }
     }
 
-    LaunchedEffect(tex.texture, started && active, url) {
-        val texture = tex.texture ?: return@LaunchedEffect
-        if (!started || !active) return@LaunchedEffect
+    LaunchedEffect(view.surface, started && active, url) {
         state = CAM_CONNECTING
+        val surface = view.surface ?: return@LaunchedEffect
+        if (!started || !active) return@LaunchedEffect
         delay(1200L + slot * 400L)
         val link = runCatching { CameraLink.connect(context.applicationContext) { state = CAM_ERROR } }.getOrElse {
             state = CAM_ERROR
             return@LaunchedEffect
         }
-        val surface = Surface(texture)
-        tex.inUse = true
+        // The decoder must let go of the surface before surfaceDestroyed returns.
+        view.release = { runCatching { link.player.stop(slot) } }
         try {
             withContext(Dispatchers.IO) { link.player.play(slot, surface, url, listener) }
             awaitCancellation()
         } finally {
+            view.release = null
             withContext(NonCancellable + Dispatchers.IO) { runCatching { link.player.stop(slot) } }
             link.close()
-            surface.release()
-            tex.inUse = false
-            tex.orphan?.release()
-            tex.orphan = null
         }
     }
 
-    val shown by animateFloatAsState(if (state == CAM_PLAYING) 1f else 0f, tween(500), label = "cam")
-    GlassButton(requester, onFocused, onClick, Modifier.size(height * 16f / 9f, height)) { f ->
+    val playing = state == CAM_PLAYING
+    val shown by animateFloatAsState(if (playing) 1f else 0f, tween(500), label = "cam")
+    GlassButton(requester, onFocused, onClick, Modifier.size(height * 16f / 9f, height), tilt = false) { f ->
         AndroidView(
             factory = { ctx ->
-                TextureView(ctx).apply {
-                    isOpaque = false
-                    surfaceTextureListener = object : TextureView.SurfaceTextureListener {
-                        override fun onSurfaceTextureAvailable(st: SurfaceTexture, w: Int, h: Int) {
-                            tex.texture = st
+                SurfaceView(ctx).apply {
+                    holder.addCallback(object : SurfaceHolder.Callback {
+                        override fun surfaceCreated(holder: SurfaceHolder) {
+                            view.surface = holder.surface
                         }
 
-                        override fun onSurfaceTextureSizeChanged(st: SurfaceTexture, w: Int, h: Int) = Unit
-                        override fun onSurfaceTextureUpdated(st: SurfaceTexture) = Unit
+                        override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) = Unit
 
-                        override fun onSurfaceTextureDestroyed(st: SurfaceTexture): Boolean {
-                            tex.texture = null
-                            if (!tex.inUse) return true
-                            tex.orphan = st
-                            return false
+                        override fun surfaceDestroyed(holder: SurfaceHolder) {
+                            view.release?.invoke()
+                            view.release = null
+                            view.surface = null
                         }
-                    }
+                    })
                 }
             },
-            modifier = Modifier.fillMaxSize().graphicsLayer { alpha = shown },
+            // The video shows through a hole the view punches in the window, so it can't fade:
+            // the hole opens once frames are coming.
+            modifier = Modifier.fillMaxSize().graphicsLayer { alpha = if (playing) 1f else 0f },
         )
         if (state != CAM_PLAYING) {
             Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {

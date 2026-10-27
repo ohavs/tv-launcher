@@ -132,7 +132,7 @@ fun CinemaHero(app: AppEntry?, item: ShelfItem?, sidePad: Dp, modifier: Modifier
                 fontSize = 38.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
-                style = TextStyle(shadow = LegibleShadow, letterSpacing = (-0.5).sp),
+                style = TextStyle(letterSpacing = (-0.5).sp),
             )
             if (it != null) {
                 Text(
@@ -142,7 +142,6 @@ fun CinemaHero(app: AppEntry?, item: ShelfItem?, sidePad: Dp, modifier: Modifier
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(shadow = LegibleShadow),
                     modifier = Modifier.padding(top = 2.dp).fillMaxWidth(0.6f),
                 )
                 it.subtitle?.let { sub ->
@@ -152,7 +151,6 @@ fun CinemaHero(app: AppEntry?, item: ShelfItem?, sidePad: Dp, modifier: Modifier
                         fontSize = 14.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(shadow = LegibleShadow),
                         modifier = Modifier.fillMaxWidth(0.6f),
                     )
                 }

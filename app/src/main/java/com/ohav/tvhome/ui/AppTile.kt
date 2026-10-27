@@ -37,10 +37,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -78,7 +78,8 @@ fun AppTile(
         label = "reveal",
     )
 
-    Column(modifier.width(width), horizontalAlignment = Alignment.CenterHorizontally) {
+    // The focused tile grows over its neighbours.
+    Column(modifier.zIndex(if (focused) 1f else 0f).width(width), horizontalAlignment = Alignment.CenterHorizontally) {
         val round = style == TileStyle.Round
         ParallaxSurface(
             focused = focused,
@@ -87,7 +88,7 @@ fun AppTile(
             shape = tileShape(style),
             focusScale = if (round) 1.16f else 1.13f,
             modifier = Modifier
-                .then(if (round) Modifier.brandGlow(app.brand, reveal) else Modifier)
+                .then(if (round) Modifier.brandGlow(app.brand) { reveal } else Modifier)
                 .size(tileWidth(style, width), tileHeight(style, width))
                 .onGloballyPositioned { bounds = it.boundsInRoot() }
                 .focusRequester(focusRequester)
@@ -103,7 +104,7 @@ fun AppTile(
                 )
                 .focusable(),
         ) {
-            TileArt(app, style, reveal)
+            TileArt(app, style) { reveal }
         }
         Text(
             app.label,
@@ -121,13 +122,13 @@ fun AppTile(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
-            style = TextStyle(shadow = LegibleShadow),
         )
     }
 }
 
 /** Soft halo in the app's colour behind a round tile, fading in with focus. */
-private fun Modifier.brandGlow(color: Color, amount: Float) = drawBehind {
+private fun Modifier.brandGlow(color: Color, amount: () -> Float) = drawBehind {
+    val amount = amount()
     if (amount <= 0.01f) return@drawBehind
     val r = size.minDimension * 0.86f
     drawCircle(
@@ -141,7 +142,7 @@ private fun Modifier.brandGlow(color: Color, amount: Float) = drawBehind {
  * colour when focused. Banner style: the classic Android TV banner.
  */
 @Composable
-fun TileArt(app: AppEntry, style: TileStyle, reveal: Float = 0f) {
+fun TileArt(app: AppEntry, style: TileStyle, reveal: () -> Float = { 0f }) {
     val banner = app.banner
     if (style == TileStyle.Banner && banner != null || app.icon == null && banner != null) {
         Image(banner!!, contentDescription = app.label, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
@@ -158,7 +159,7 @@ fun TileArt(app: AppEntry, style: TileStyle, reveal: Float = 0f) {
         Box(
             Modifier
                 .matchParentSize()
-                .graphicsLayer { alpha = reveal }
+                .graphicsLayer { alpha = reveal() }
                 .background(Brush.linearGradient(listOf(lerp(fill, Color.White, 0.10f), lerp(fill, Color.Black, 0.16f))))
         )
         val glyph = app.glyph

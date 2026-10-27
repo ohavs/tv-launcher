@@ -27,6 +27,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -48,7 +51,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -96,7 +98,6 @@ fun ContentRow(
                 color = Color.White.copy(alpha = 0.88f),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                style = TextStyle(shadow = LegibleShadow),
             )
             Row(
                 Modifier
@@ -106,7 +107,16 @@ fun ContentRow(
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
                 verticalAlignment = Alignment.Top,
             ) {
-                s.items.forEachIndexed { i, item ->
+                // A screenful first and the rest over the next frames (while the row fades in), so a new
+                // row never stalls a frame.
+                var count by remember(s) { mutableIntStateOf(minOf(s.items.size, 4)) }
+                LaunchedEffect(s) {
+                    while (count < s.items.size) {
+                        withFrameNanos { }
+                        count = minOf(s.items.size, count + 2)
+                    }
+                }
+                s.items.take(count).forEachIndexed { i, item ->
                     ContentCard(item, cardHeight, s.app?.accent ?: Color.DarkGray, captions, req("c:" + item.key), { onFocused(i) }, onOpen)
                 }
             }
@@ -182,7 +192,6 @@ private fun ContentCard(
             fontWeight = FontWeight.Medium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            style = TextStyle(shadow = LegibleShadow),
         )
         if (captions) item.subtitle?.let {
             Text(

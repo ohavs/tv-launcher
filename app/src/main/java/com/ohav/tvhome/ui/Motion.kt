@@ -72,6 +72,8 @@ fun ParallaxSurface(
     jiggle: Boolean = false,
     /** Off for see-through surfaces: the shadow would show through the glass. */
     shadow: Boolean = true,
+    /** Off over video surfaces, which can follow scale but not 3D rotation. */
+    tilt: Boolean = true,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val motion = LocalFocusMotion.current
@@ -95,7 +97,7 @@ fun ParallaxSurface(
     val nudgeY = remember { Animatable(0f) }
 
     LaunchedEffect(focused) {
-        if (!focused) return@LaunchedEffect
+        if (!focused || !tilt) return@LaunchedEffect
         val d = motion.lastDir ?: return@LaunchedEffect
         launch { tiltY.snapTo(d.dx * 10f); tiltY.animateTo(0f, tiltSpring) }
         launch { tiltX.snapTo(-d.dy * 10f); tiltX.animateTo(0f, tiltSpring) }

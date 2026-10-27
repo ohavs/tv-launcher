@@ -40,12 +40,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -61,7 +64,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import com.ohav.tvhome.HomeController
 import com.ohav.tvhome.R
 import com.ohav.tvhome.data.AppEntry
@@ -70,6 +72,7 @@ import com.ohav.tvhome.data.ShelfItem
 import com.ohav.tvhome.data.TileStyle
 import com.ohav.tvhome.data.cityOf
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 
 /** Focus rows, top to bottom. Up/Down jumps between them and returns to the last item used. */
 private enum class Section { Top, Widgets, Apps, Content }
@@ -111,7 +114,18 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
     /** Bumped on every focus move, for what reads [lastIndex] while composing (cinema hero and carousel). */
     var focusMoves by remember { mutableIntStateOf(0) }
     var shelfApp by remember { mutableStateOf<AppEntry?>(null) }
+    /** The app whose content is on screen: follows [shelfApp] once focus rests. */
+    var shelfShown by remember { mutableStateOf<AppEntry?>(null) }
     var shelfItems by remember { mutableStateOf<List<ShelfItem>>(emptyList()) }
+    // Derived, so only what shows them recomposes, and only when they actually change.
+    val heroItem by remember {
+        derivedStateOf {
+            focusMoves
+            if (section == Section.Content) shelfItems.getOrNull(lastIndex[Section.Content.ordinal])
+            else shelfItems.firstOrNull { it.imageUri != null } ?: shelfItems.firstOrNull()
+        }
+    }
+    val carouselCenter by remember { derivedStateOf { focusMoves; lastIndex[Section.Apps.ordinal] } }
     var menuApp by remember { mutableStateOf<AppEntry?>(null) }
     var movingId by remember { mutableStateOf<String?>(null) }
     var showAll by remember { mutableStateOf(false) }
@@ -162,7 +176,6 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Color.Black)
                 .onPreviewKeyEvent { ev ->
                     val dir = when (ev.key) {
                         Key.DirectionLeft -> Dir.Left
@@ -218,11 +231,11 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                 translationY = (1f - p) * 22.dp.toPx()
             }
 
-            focusMoves
-            val heroItem = if (section == Section.Content) shelfItems.getOrNull(lastIndex[Section.Content.ordinal])
-                else shelfItems.firstOrNull { it.imageUri != null } ?: shelfItems.firstOrNull()
-            if (cinema) {
-                CinemaBackdrop(shelfApp, heroItem, Modifier.graphicsLayer {
+            // The photo and its scrims are cached in one offscreen layer: one full-screen pass per frame
+            // instead of four (the GPU is fill-rate bound), redrawn only when the picture changes.
+            Box(Modifier.fillMaxSize().graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }.background(Color.Black)) {
+            if (cinema) Isolated {
+                CinemaBackdrop(shelfShown, heroItem, Modifier.graphicsLayer {
                     val s = 1.06f - 0.06f * EaseOut.transform(enter.value)
                     scaleX = s
                     scaleY = s
@@ -253,6 +266,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                     )
                 )
             )
+            }
             }
 
             Column(Modifier.fillMaxSize().padding(top = 30.dp)) {
@@ -297,10 +311,10 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
 
                 if (cinema) {
                     Spacer(Modifier.weight(1f))
-                    CinemaHero(shelfApp, heroItem, sidePad, Modifier.stagger(2))
+                    Isolated { CinemaHero(shelfShown, heroItem, sidePad, Modifier.stagger(2)) }
                     CompositionLocalProvider(LocalBringIntoViewSpec provides keep) {
-                        ContentRow(
-                            state = ShelfState(shelfApp, shelfItems),
+                        Isolated { ContentRow(
+                            state = ShelfState(shelfShown, shelfItems),
                             sidePad = sidePad,
                             cardHeight = 62.dp,
                             req = ::req,
@@ -309,12 +323,12 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                             modifier = Modifier.stagger(2),
                             showTitle = false,
                             captions = false,
-                        )
+                        ) }
                     }
-                    AppCarousel(
+                    Isolated { AppCarousel(
                         apps = apps,
                         style = style,
-                        center = lastIndex[Section.Apps.ordinal].coerceIn(0, (apps.size - 1).coerceAtLeast(0)),
+                        center = carouselCenter.coerceIn(0, (apps.size - 1).coerceAtLeast(0)),
                         movingId = movingId,
                         req = ::req,
                         onFocused = { i, app ->
@@ -325,7 +339,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                         onClick = home::launch,
                         onLongPress = { menuApp = it },
                         modifier = Modifier.stagger(3).padding(bottom = 16.dp),
-                    )
+                    ) }
                 } else {
                 Spacer(Modifier.height(if (widgetIds.isEmpty()) 60.dp else 4.dp))
                 CompositionLocalProvider(LocalBringIntoViewSpec provides keep) {
@@ -353,23 +367,21 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                                         },
                                         onClick = { rect -> home.launch(app, rect) },
                                         onLongPress = { menuApp = app },
-                                        modifier = Modifier
-                                            .offset { pos }
-                                            .zIndex(if (section == Section.Apps && lastIndex[Section.Apps.ordinal] == i) 1f else 0f),
+                                        modifier = Modifier.offset { pos },
                                     )
                                 }
                             }
                         }
                     }
-                    ContentRow(
-                        state = ShelfState(shelfApp, shelfItems),
+                    Isolated { ContentRow(
+                        state = ShelfState(shelfShown, shelfItems),
                         sidePad = sidePad,
                         cardHeight = 100.dp,
                         req = ::req,
                         onFocused = { onFocused(Section.Content, it) },
                         onOpen = home::open,
                         modifier = Modifier.stagger(3),
-                    )
+                    ) }
                 }
                 }
             }
@@ -437,12 +449,19 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
         focus(Section.Apps, 0)
     }
 
-    // Content for the focused app; refreshed whenever we come back.
-    LaunchedEffect(shelfApp?.packageName, home.resumeSignal) {
-        val pkg = shelfApp?.packageName ?: return@LaunchedEffect
-        shelfItems = home.shelf.cached(pkg) ?: emptyList()
-        delay(140)
-        shelfItems = home.shelf.itemsFor(pkg)
+    // Content for the focused app; refreshed whenever we come back. While focus travels along the apps it
+    // waits for focus to rest, so moving through the row never pays for building content rows.
+    LaunchedEffect(home.resumeSignal) {
+        var first = true
+        snapshotFlow { shelfApp }.collectLatest { app ->
+            val pkg = app?.packageName ?: return@collectLatest
+            if (!first) delay(160)
+            first = false
+            shelfItems = home.shelf.cached(pkg) ?: emptyList()
+            shelfShown = app
+            delay(140)
+            shelfItems = home.shelf.itemsFor(pkg)
+        }
     }
     LaunchedEffect(apps.take(6).map { it.packageName }, home.resumeSignal) {
         apps.take(6).forEach { home.shelf.itemsFor(it.packageName) }
@@ -460,3 +479,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
         )
     }
 }
+
+/** Gives [content] its own recomposition scope, so the state it reads doesn't recompose the whole home screen. */
+@Composable
+private fun Isolated(content: @Composable () -> Unit) = content()

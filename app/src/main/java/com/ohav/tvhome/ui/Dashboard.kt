@@ -82,7 +82,7 @@ fun ClockBlock(weather: WeatherNow?, city: City, modifier: Modifier = Modifier) 
             color = Color.White,
             fontSize = 56.sp,
             fontWeight = FontWeight.Light,
-            style = TextStyle(shadow = LegibleShadow, letterSpacing = (-1).sp, lineHeight = 60.sp),
+            style = TextStyle(letterSpacing = (-1).sp, lineHeight = 60.sp),
         )
         Column(Modifier.padding(start = 20.dp)) {
         Text(
@@ -90,7 +90,6 @@ fun ClockBlock(weather: WeatherNow?, city: City, modifier: Modifier = Modifier) 
             color = Color.White.copy(alpha = 0.92f),
             fontSize = 18.sp,
             fontWeight = FontWeight.Medium,
-            style = TextStyle(shadow = LegibleShadow),
         )
         if (weather != null) {
             Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -99,13 +98,11 @@ fun ClockBlock(weather: WeatherNow?, city: City, modifier: Modifier = Modifier) 
                     "  ${weather.temp}°  ${stringResource(skyName(weather.sky))} · ${city.name}",
                     color = Color.White.copy(alpha = 0.78f),
                     fontSize = 15.sp,
-                    style = TextStyle(shadow = LegibleShadow),
                 )
                 Text(
                     "   ↑${weather.hi}° ↓${weather.lo}°",
                     color = Color.White.copy(alpha = 0.5f),
                     fontSize = 14.sp,
-                    style = TextStyle(shadow = LegibleShadow),
                 )
             }
         }
@@ -137,6 +134,7 @@ fun GlassButton(
     shape: Shape = PanelShape,
     focusScale: Float = 1.06f,
     solidFocus: Boolean = false,
+    tilt: Boolean = true,
     content: @Composable BoxScope.(focus: Float) -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
@@ -149,6 +147,7 @@ fun GlassButton(
         shape = shape,
         focusScale = focusScale,
         shadow = solidFocus,
+        tilt = tilt,
         modifier = modifier
             .onGloballyPositioned { bounds = it.boundsInRoot() }
             .focusRequester(requester)

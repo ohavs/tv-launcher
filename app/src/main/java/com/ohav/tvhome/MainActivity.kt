@@ -60,6 +60,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             HomeScreen(home, openSettings = { startActivity(Intent(this, SettingsActivity::class.java)) })
         }
+        // The home screen paints every pixel itself; the window background would be one more full-screen pass.
+        window.setBackgroundDrawable(null)
     }
 
     override fun onNewIntent(intent: Intent) {

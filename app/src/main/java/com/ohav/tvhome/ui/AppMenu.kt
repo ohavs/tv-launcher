@@ -61,7 +61,7 @@ fun AppMenu(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 10.dp)) {
-                    Box(Modifier.size(tileWidth(style, 96.dp), tileHeight(style, 96.dp)).clip(tileShape(style))) { TileArt(app, style, 1f) }
+                    Box(Modifier.size(tileWidth(style, 96.dp), tileHeight(style, 96.dp)).clip(tileShape(style))) { TileArt(app, style) { 1f } }
                     Text(app.label, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 18.dp))
                 }
                 MenuRow(stringResource(R.string.menu_move), Modifier.focusRequester(first), onClick = onMove)

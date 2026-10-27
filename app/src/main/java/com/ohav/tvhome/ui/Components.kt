@@ -24,7 +24,6 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -44,8 +43,6 @@ val PanelShape = RoundedCornerShape(22.dp)
 /** Frosted-glass look without a real blur (blur is too costly on this CPU). */
 val GlassFill = Color.White.copy(alpha = 0.09f)
 val GlassEdge = Color.White.copy(alpha = 0.11f)
-
-val LegibleShadow = Shadow(Color.Black.copy(alpha = 0.55f), androidx.compose.ui.geometry.Offset(0f, 2f), 10f)
 
 fun KeyEvent.isSelect() = key == Key.DirectionCenter || key == Key.Enter || key == Key.NumPadEnter
 
