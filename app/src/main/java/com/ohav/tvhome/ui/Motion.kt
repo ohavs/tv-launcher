@@ -59,7 +59,7 @@ private val tiltSpring = spring<Float>(dampingRatio = 0.38f, stiffness = 160f)
 
 /**
  * tvOS-style focus surface: springy lift, entry tilt in the direction of travel,
- * a slow idle sway while focused, a specular sheen that follows the tilt,
+ * a specular sheen that follows the tilt,
  * a soft shadow, an edge bump when focus can't move, and an optional edit-mode jiggle.
  */
 @Composable
@@ -70,6 +70,8 @@ fun ParallaxSurface(
     modifier: Modifier = Modifier,
     focusScale: Float = 1.16f,
     jiggle: Boolean = false,
+    /** Off for see-through surfaces: the shadow would show through the glass. */
+    shadow: Boolean = true,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val motion = LocalFocusMotion.current
@@ -113,13 +115,7 @@ fun ParallaxSurface(
         launch { tiltX.animateTo(-d.dy * 7f, tween(90)); tiltX.animateTo(0f, tiltSpring) }
     }
 
-    var swayX: State<Float>? = null
-    var swayY: State<Float>? = null
-    if (focused) {
-        val sway = rememberInfiniteTransition(label = "sway")
-        swayX = sway.animateFloat(-1.4f, 1.4f, infiniteRepeatable(tween(4300, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "sx")
-        swayY = sway.animateFloat(-1.8f, 1.8f, infiniteRepeatable(tween(5900, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "sy")
-    }
+    // No idle sway: a still home screen costs no frames (performance budget).
     var wiggle: State<Float>? = null
     if (jiggle) {
         val w = rememberInfiniteTransition(label = "jiggle")
@@ -131,13 +127,13 @@ fun ParallaxSurface(
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-                rotationX = tiltX.value + (swayX?.value ?: 0f) * lift
-                rotationY = tiltY.value + (swayY?.value ?: 0f) * lift
+                rotationX = tiltX.value
+                rotationY = tiltY.value
                 rotationZ = wiggle?.value ?: 0f
                 translationX = nudgeX.value.dp.toPx()
                 translationY = nudgeY.value.dp.toPx()
                 cameraDistance = 16f * density
-                shadowElevation = lift * 26.dp.toPx()
+                shadowElevation = if (shadow) lift * 26.dp.toPx() else 0f
                 ambientShadowColor = Color.Black
                 spotShadowColor = Color.Black
                 this.shape = shape
@@ -147,7 +143,7 @@ fun ParallaxSurface(
                 drawContent()
                 if (lift > 0.01f) {
                     // Sheen slides across as the surface tilts.
-                    val t = ((tiltY.value + (swayY?.value ?: 0f)) / 10f).coerceIn(-1f, 1f)
+                    val t = (tiltY.value / 10f).coerceIn(-1f, 1f)
                     val cx = size.width * (0.5f - t * 0.6f)
                     drawRect(
                         Brush.linearGradient(

@@ -1,5 +1,7 @@
 package com.ohav.tvhome.settings
 
+import android.app.NotificationManager
+import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
@@ -40,7 +42,11 @@ import com.ohav.tvhome.R
 import com.ohav.tvhome.HomeKeyService
 import com.ohav.tvhome.ui.WALLPAPERS
 import com.ohav.tvhome.data.AppRepository
+import com.ohav.tvhome.data.CITIES
 import com.ohav.tvhome.data.Prefs
+import com.ohav.tvhome.data.TileStyle
+import com.ohav.tvhome.data.cityOf
+import com.ohav.tvhome.media.MediaListener
 import com.ohav.tvhome.ui.MenuColumn
 import com.ohav.tvhome.ui.MenuRow
 import com.ohav.tvhome.ui.SectionTitle
@@ -75,6 +81,10 @@ private fun SettingsScreen() {
     var hidden by remember { mutableStateOf(prefs.hidden) }
     var update by remember { mutableStateOf<UpdateUi>(UpdateUi.Idle) }
     var showCredits by remember { mutableStateOf(false) }
+    var tileStyle by remember { mutableStateOf(prefs.tileStyle) }
+    var cityId by remember { mutableStateOf(prefs.cityId) }
+    var showCities by remember { mutableStateOf(false) }
+    var mediaAccess by remember { mutableStateOf(false) }
     val first = remember { FocusRequester() }
     val allApps by produceState(emptyList(), hidden) { value = AppRepository(context).load() }
 
@@ -106,6 +116,8 @@ private fun SettingsScreen() {
 
     LifecycleResumeEffect(Unit) {
         homeKey = HomeKeyService.isEnabled(context)
+        mediaAccess = context.getSystemService(NotificationManager::class.java)
+            .isNotificationListenerAccessGranted(ComponentName(context, MediaListener::class.java))
         onPauseOrDispose { }
     }
 
@@ -155,6 +167,37 @@ private fun SettingsScreen() {
                     MenuRow(stringResource(R.string.system_settings)) {
                         runCatching { context.startActivity(Intent(Settings.ACTION_SETTINGS)) }
                     }
+
+                    SectionTitle(stringResource(R.string.appearance))
+                    MenuRow(
+                        stringResource(R.string.tile_style),
+                        value = stringResource(
+                            when (tileStyle) {
+                                TileStyle.Color -> R.string.tile_color
+                                TileStyle.Mono -> R.string.tile_mono
+                                TileStyle.Banner -> R.string.tile_banner
+                            }
+                        ),
+                    ) {
+                        tileStyle = TileStyle.entries[(tileStyle.ordinal + 1) % TileStyle.entries.size]
+                        prefs.tileStyle = tileStyle
+                    }
+                    MenuRow(stringResource(R.string.weather_city), value = cityOf(cityId).name + if (showCities) "  ▲" else "  ▼") {
+                        showCities = !showCities
+                    }
+                    if (showCities) {
+                        CITIES.forEach { city ->
+                            MenuRow(city.name, value = if (city.id == cityId) "✓" else null) {
+                                cityId = city.id
+                                prefs.cityId = city.id
+                                showCities = false
+                            }
+                        }
+                    }
+                    MenuRow(
+                        stringResource(R.string.media_access),
+                        value = stringResource(if (mediaAccess) R.string.allowed else R.string.not_allowed),
+                    ) { }
 
                     SectionTitle(stringResource(R.string.hidden_apps))
                     val hiddenApps = allApps.filter { it.id in hidden }

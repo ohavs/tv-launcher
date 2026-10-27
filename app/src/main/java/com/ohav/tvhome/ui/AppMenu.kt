@@ -31,10 +31,12 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ohav.tvhome.R
 import com.ohav.tvhome.data.AppEntry
+import com.ohav.tvhome.data.TileStyle
 
 @Composable
 fun AppMenu(
     app: AppEntry,
+    style: TileStyle,
     canHide: Boolean,
     onMove: () -> Unit,
     onHide: () -> Unit,
@@ -59,7 +61,7 @@ fun AppMenu(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 10.dp)) {
-                    Box(Modifier.size(96.dp, 54.dp).clip(TileShape)) { TileArt(app) }
+                    Box(Modifier.size(96.dp, tileHeight(style, 96.dp)).clip(TileShape)) { TileArt(app, style, 1f) }
                     Text(app.label, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 18.dp))
                 }
                 MenuRow(stringResource(R.string.menu_move), Modifier.focusRequester(first), onClick = onMove)

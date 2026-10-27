@@ -37,8 +37,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-val TileShape = RoundedCornerShape(14.dp)
-val CardShape = RoundedCornerShape(16.dp)
+val TileShape = RoundedCornerShape(16.dp)
+val CardShape = RoundedCornerShape(14.dp)
+val PanelShape = RoundedCornerShape(22.dp)
+
+/** Frosted-glass look without a real blur (blur is too costly on this CPU). */
+val GlassFill = Color.White.copy(alpha = 0.09f)
+val GlassEdge = Color.White.copy(alpha = 0.11f)
 
 val LegibleShadow = Shadow(Color.Black.copy(alpha = 0.55f), androidx.compose.ui.geometry.Offset(0f, 2f), 10f)
 

@@ -26,4 +26,26 @@
     <string name="system_settings">System settings</string>
     <string name="credits">Wallpaper credits</string>
     <string name="version">Version %1$s</string>
+    <string name="all_apps">All apps</string>
+    <string name="smart_home">Smart home</string>
+    <string name="now_playing">Playing</string>
+    <string name="paused">Paused</string>
+    <string name="continue_in">Continue watching · %1$s</string>
+    <string name="sky_clear">Clear</string>
+    <string name="sky_partly">Partly cloudy</string>
+    <string name="sky_cloudy">Cloudy</string>
+    <string name="sky_fog">Fog</string>
+    <string name="sky_drizzle">Drizzle</string>
+    <string name="sky_rain">Rain</string>
+    <string name="sky_snow">Snow</string>
+    <string name="sky_storm">Thunderstorm</string>
+    <string name="appearance">Appearance</string>
+    <string name="weather_city">Weather city</string>
+    <string name="tile_style">App tiles</string>
+    <string name="tile_color">Icons</string>
+    <string name="tile_mono">Monochrome</string>
+    <string name="tile_banner">Banners</string>
+    <string name="media_access">Now playing on the dashboard</string>
+    <string name="allowed">Allowed</string>
+    <string name="not_allowed">Not allowed (run install-launcher.cmd)</string>
 </resources>

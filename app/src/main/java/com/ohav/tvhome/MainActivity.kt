@@ -67,6 +67,16 @@ class MainActivity : ComponentActivity() {
         if (intent.hasCategory(Intent.CATEGORY_HOME)) home.homeSignal++
     }
 
+    override fun onStart() {
+        super.onStart()
+        home.nowPlaying.start()
+    }
+
+    override fun onStop() {
+        home.nowPlaying.stop()
+        super.onStop()
+    }
+
     override fun onResume() {
         super.onResume()
         // Catches installs/removals missed while another app was in front.

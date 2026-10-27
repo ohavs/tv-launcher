@@ -26,4 +26,26 @@
     <string name="system_settings">הגדרות מערכת</string>
     <string name="credits">קרדיטים לתמונות הרקע</string>
     <string name="version">גרסה %1$s</string>
+    <string name="all_apps">כל האפליקציות</string>
+    <string name="smart_home">הבית החכם</string>
+    <string name="now_playing">מתנגן</string>
+    <string name="paused">מושהה</string>
+    <string name="continue_in">המשך צפייה · %1$s</string>
+    <string name="sky_clear">בהיר</string>
+    <string name="sky_partly">מעונן חלקית</string>
+    <string name="sky_cloudy">מעונן</string>
+    <string name="sky_fog">ערפל</string>
+    <string name="sky_drizzle">טפטוף</string>
+    <string name="sky_rain">גשם</string>
+    <string name="sky_snow">שלג</string>
+    <string name="sky_storm">סופת רעמים</string>
+    <string name="appearance">מראה</string>
+    <string name="weather_city">עיר למזג האוויר</string>
+    <string name="tile_style">סגנון אריחים</string>
+    <string name="tile_color">אייקונים</string>
+    <string name="tile_mono">מונוכרום</string>
+    <string name="tile_banner">באנרים</string>
+    <string name="media_access">«מתנגן עכשיו» בדשבורד</string>
+    <string name="allowed">מאושר</string>
+    <string name="not_allowed">לא מאושר (להריץ install-launcher.cmd)</string>
 </resources>

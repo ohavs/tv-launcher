@@ -7,11 +7,10 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -37,24 +36,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ohav.tvhome.R
 import com.ohav.tvhome.data.AppEntry
 import com.ohav.tvhome.data.ImageLoader
 import com.ohav.tvhome.data.ShelfItem
@@ -62,15 +62,16 @@ import com.ohav.tvhome.data.ShelfItem
 data class ShelfState(val app: AppEntry?, val items: List<ShelfItem>)
 
 /**
- * The area above the first row. Shows what the focused first-row app publishes
- * (continue watching + preview channels); empty apps leave the wallpaper in full view.
+ * Content from the focused app (continue watching + its preview channels), under the apps row.
+ * Card focus ids are "c:<key>" so the home screen can move focus here directly.
  */
 @Composable
-fun TopShelf(
+fun ContentRow(
     state: ShelfState,
-    height: Dp,
     sidePad: Dp,
-    downTarget: FocusRequester?,
+    cardHeight: Dp,
+    req: (String) -> FocusRequester,
+    onFocused: (Int) -> Unit,
     onOpen: (ShelfItem, Rect) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -78,56 +79,48 @@ fun TopShelf(
         targetState = state,
         contentKey = { (it.app?.id ?: "") + "#" + it.items.size },
         transitionSpec = {
-            (fadeIn(tween(520, delayMillis = 60)) + slideInHorizontally(tween(620)) { it / 14 }) togetherWith fadeOut(tween(260))
+            (fadeIn(tween(420, delayMillis = 80)) + slideInVertically(tween(520)) { it / 10 }) togetherWith fadeOut(tween(200))
         },
-        modifier = modifier
-            .fillMaxWidth()
-            .height(height),
-        label = "shelf",
+        modifier = modifier.fillMaxWidth(),
+        label = "content",
     ) { s ->
-        Box(Modifier.fillMaxSize()) {
-            if (s.items.isNotEmpty()) {
-                ShelfRow(
-                    items = s.items,
-                    accent = s.app?.accent ?: Color.DarkGray,
-                    sidePad = sidePad,
-                    downTarget = downTarget,
-                    onOpen = onOpen,
-                    modifier = Modifier.align(Alignment.BottomStart).padding(bottom = 22.dp),
-                )
+        if (s.items.isEmpty()) return@AnimatedContent Box(Modifier.fillMaxWidth())
+        Column {
+            val resuming = s.items.any { it.progress != null }
+            val label = s.app?.label.orEmpty()
+            Text(
+                if (resuming) stringResource(R.string.continue_in, label) else label,
+                modifier = Modifier.padding(horizontal = sidePad),
+                color = Color.White.copy(alpha = 0.88f),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                style = TextStyle(shadow = LegibleShadow),
+            )
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(start = sidePad, end = sidePad, top = 14.dp, bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                verticalAlignment = Alignment.Top,
+            ) {
+                s.items.forEachIndexed { i, item ->
+                    ContentCard(item, cardHeight, s.app?.accent ?: Color.DarkGray, req("c:" + item.key), { onFocused(i) }, onOpen)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ShelfRow(
-    items: List<ShelfItem>,
+private fun ContentCard(
+    item: ShelfItem,
+    height: Dp,
     accent: Color,
-    sidePad: Dp,
-    downTarget: FocusRequester?,
+    requester: FocusRequester,
+    onFocused: () -> Unit,
     onOpen: (ShelfItem, Rect) -> Unit,
-    modifier: Modifier = Modifier,
 ) {
-    val cardHeight = 138.dp
-    Row(
-        modifier
-            .fillMaxWidth()
-            .focusProperties { if (downTarget != null) down = downTarget }
-            .focusGroup()
-            .horizontalScroll(rememberScrollState())
-            .padding(start = sidePad, end = sidePad, top = 20.dp, bottom = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(30.dp),
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        items.forEach { item ->
-            ShelfCard(item, cardHeight, accent, onOpen)
-        }
-    }
-}
-
-@Composable
-private fun ShelfCard(item: ShelfItem, height: Dp, accent: Color, onOpen: (ShelfItem, Rect) -> Unit) {
     var focused by remember { mutableStateOf(false) }
     var pressed by remember { mutableStateOf(false) }
     var bounds by remember { mutableStateOf(Rect.Zero) }
@@ -137,18 +130,22 @@ private fun ShelfCard(item: ShelfItem, height: Dp, accent: Color, onOpen: (Shelf
     val image by produceState(item.imageUri?.let { ImageLoader.cached(it) }, item.imageUri) {
         item.imageUri?.let { value = ImageLoader.load(context, it, maxPx) }
     }
-    val caption by animateFloatAsState(if (focused) 1f else 0f, spring(1f, Spring.StiffnessMediumLow), label = "caption")
+    val f by animateFloatAsState(if (focused) 1f else 0f, spring(1f, Spring.StiffnessMediumLow), label = "caption")
 
     Column(Modifier.width(width)) {
         ParallaxSurface(
             focused = focused,
             pressed = pressed,
             shape = CardShape,
-            focusScale = 1.09f,
+            focusScale = 1.08f,
             modifier = Modifier
                 .size(width, height)
                 .onGloballyPositioned { bounds = it.boundsInRoot() }
-                .onFocusChanged { focused = it.isFocused }
+                .focusRequester(requester)
+                .onFocusChanged {
+                    focused = it.isFocused
+                    if (it.isFocused) onFocused()
+                }
                 .selectKeys(onPressed = { pressed = it }, onClick = { onOpen(item, bounds) })
                 .focusable(),
         ) {
@@ -157,32 +154,41 @@ private fun ShelfCard(item: ShelfItem, height: Dp, accent: Color, onOpen: (Shelf
             if (image == null) {
                 Text(
                     item.title,
-                    modifier = Modifier.align(Alignment.BottomStart).padding(14.dp),
-                    color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 2,
+                    modifier = Modifier.align(Alignment.BottomStart).padding(12.dp),
+                    color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 2,
                 )
             }
-            item.progress?.let { p ->
-                Box(
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(horizontal = 14.dp, vertical = 10.dp)
-                        .fillMaxWidth()
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(Color.White.copy(alpha = 0.3f))
-                ) {
-                    Box(Modifier.fillMaxWidth(p).height(4.dp).background(Color.White))
-                }
+        }
+        item.progress?.let { p ->
+            Box(
+                Modifier
+                    .padding(top = 8.dp)
+                    .fillMaxWidth()
+                    .height(3.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(Color.White.copy(alpha = 0.22f))
+            ) {
+                Box(Modifier.fillMaxWidth(p).height(3.dp).background(Color.White))
             }
         }
         Text(
             item.title,
-            modifier = Modifier
-                .padding(top = 16.dp)
-                .graphicsLayer { alpha = caption; translationY = (1f - caption) * -6.dp.toPx() },
-            color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium,
-            maxLines = 1, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 8.dp),
+            color = Color.White.copy(alpha = 0.7f + 0.3f * f),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             style = TextStyle(shadow = LegibleShadow),
         )
+        item.subtitle?.let {
+            Text(
+                it,
+                color = Color.White.copy(alpha = 0.45f + 0.2f * f),
+                fontSize = 12.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }

@@ -22,5 +22,7 @@ if not exist "%APK%" (
 "%ADB%" -s %TV% shell cmd package set-home-activity --user 0 %PKG%/.MainActivity
 "%ADB%" -s %TV% shell settings put secure enabled_accessibility_services %PKG%/%PKG%.HomeKeyService
 "%ADB%" -s %TV% shell settings put secure accessibility_enabled 1
+rem Media sessions for the dashboard's "now playing" card.
+"%ADB%" -s %TV% shell cmd notification allow_listener %PKG%/%PKG%.media.MediaListener
 "%ADB%" -s %TV% shell am start -n %PKG%/.MainActivity
 echo Done: TV Home is the Home screen.

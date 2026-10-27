@@ -17,6 +17,18 @@ class Prefs(context: Context) {
         get() = sp.getInt("pkgSeq", 0)
         set(v) = sp.edit().putInt("pkgSeq", v).apply()
 
+    var tileStyle: TileStyle
+        get() = runCatching { TileStyle.valueOf(sp.getString("tileStyle", null)!!) }.getOrDefault(TileStyle.Color)
+        set(v) = sp.edit().putString("tileStyle", v.name).apply()
+
+    var cityId: String
+        get() = sp.getString("city", CITIES.first().id)!!
+        set(v) = sp.edit().putString("city", v).apply()
+
+    var weather: WeatherNow?
+        get() = sp.getString("weather", null)?.let { WeatherNow.fromJson(it) }
+        set(v) = sp.edit().putString("weather", v?.toJson()).apply()
+
     /**
      * Applies the saved order; apps never seen before are slotted in by [defaultRank]
      * among the new ones and appended after the saved ones.

@@ -5,6 +5,17 @@
 - ADB over network: `10.0.0.43:5555` (mDNS `_adb._tcp`). ADB: `%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe`.
 - Shell user has groups `input`, `uhid` — but SELinux blocks writing `/dev/input/*`.
 - Open ports: 5555 adb, 6466/6467 Android TV Remote v2 (`com.google.android.tv.remote.service`), 8008/8009/8443 Cast.
+- Display 1920x1080 @ 320 dpi → layouts are **960x540 dp**. UI language Hebrew → RTL (row index 0 is on the right).
+
+## Home network
+- Provision DVR (probably) `10.0.0.14`: RTSP 554 open, `Digest realm="RTSP SERVER"`, no HTTP on 80. PC is `10.0.0.24`.
+- Imilab EC5 can't be linked to Google Home (user). go2rtc `xiaomi` source lists EC5 Floodlight
+  (`chuangmi.camera.055a02` / `055c02`, cs2) as supported (github.com/AlexxIT/go2rtc/issues/1982); needs cloud for keys, stream is LAN.
+
+## YouTube
+- `youtube.com/tv` serves "YouTube on TV" (leanback/kabuki) when the UA is a TV/Cobalt UA.
+- SmartTube **27.99** is installed (`com.teamsmart.videomanager.tv`, June 2025) — older than the Dec 2025 key compromise
+  (bad builds 30.43/30.47; clean builds from 30.56 have a new package). User doesn't want to sign in to it.
 
 ## Testing rules
 - **Never use `monkey` to launch apps** — it injects a random event (e.g. MEDIA_PLAY → Spotify starts playing).
@@ -14,6 +25,10 @@
 - Top activity: `dumpsys activity activities | grep -m1 topResumedActivity`.
 - Screenshot: `adb exec-out screencap -p > backup/x.png` (backup/ is gitignored); downscale before viewing.
 - Local builds: `BUILD_NUMBER=<next CI run number> ./gradlew :app:assembleRelease`, else adb refuses a versionCode downgrade.
+  The first `-q` build after edits sometimes fails in ~3 s with no message; running it again works.
+- Git Bash: prefix adb commands with `MSYS_NO_PATHCONV=1`, else `/data/local/tmp/...` is rewritten to a Windows path.
+- D-pad tests: `input keyevent DPAD_*` is fine (only Home/Google Home need `tools/hid`). Contact sheets:
+  Pillow is in `C:/Users/ohav8/AppData/Local/Programs/Python/Python310/python.exe`.
 - `local.properties`: `sdk.dir=C:/Users/ohav8/AppData/Local/Android/Sdk` (forward slashes).
 
 ## Home button / stock launcher
@@ -30,6 +45,21 @@
 - Accessibility enabled via adb: `settings put secure enabled_accessibility_services com.ohav.tvhome/com.ohav.tvhome.HomeKeyService`
   + `accessibility_enabled 1`. Sideloaded apps hit "restricted settings" in the UI; adb bypasses it. Survives app updates (verified).
 - Remote key layout `/system/usr/keylayout/Vendor_18d1_Product_9451.kl`: MACRO_1, BUTTON_3 (YouTube key), BUTTON_4 (Netflix key).
+
+## Launcher UI (Compose)
+- On window focus Compose focuses the top-left focusable (the Settings circle) → HomeScreen re-focuses the apps row
+  until "settled", then restores the last section on every window focus.
+- Key handling is ours: Left/Right inside a section, Up/Down between sections (Top/Widgets/Apps/Content) with
+  remembered index. Avoids Compose's geometric search jumping between rows.
+- No shadow on translucent glass: the elevation shadow shows *through* the surface as a light bar.
+- App icons: adaptive layers rendered at 216px, cropped to the 72/108 visible area. Glyph = foreground if it reads on
+  dark (mean luminance > 0.10), else the flat plate behind the logo is keyed out (YouTube/Netflix/Cellcom). Logos are
+  trimmed to their bounds and drawn at one optical size. Focus fills the tile with the icon's background colour.
+- "Now playing": `MediaListener` (NotificationListenerService) only for `getActiveSessions`; grant with
+  `cmd notification allow_listener com.ohav.tvhome/com.ohav.tvhome.media.MediaListener` (install script does it).
+  Paused sessions older than 30 min are hidden (Spotify's boot session).
+- Weather: Open-Meteo, refreshed on resume when > 30 min old; city from a fixed list (no keyboard).
+- Memory after the redesign: ~132 MB PSS on home (Graphics ~57 MB). Budget 150 MB.
 
 ## TV provider (Top Shelf)
 - Needs `READ_EPG_DATA` (normal) **and** `android.permission.READ_TV_LISTINGS` (runtime on 14; `pm grant`).
