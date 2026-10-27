@@ -42,6 +42,7 @@
 - Remote Google Home button = `KEYCODE_MACRO_1` (HID usage 0x0c0186). launcherx's FGS tries to start
   `OPEN_SMART_HOME` but Android blocks it (BAL) when launcherx home isn't visible → our a11y service starts it
   (a11y services are BAL-exempt); second press = BACK if `rootInActiveWindow` is dreamx.
+- `am force-stop com.ohav.tvhome` **clears** `enabled_accessibility_services` → re-run the two `settings put` lines below.
 - Accessibility enabled via adb: `settings put secure enabled_accessibility_services com.ohav.tvhome/com.ohav.tvhome.HomeKeyService`
   + `accessibility_enabled 1`. Sideloaded apps hit "restricted settings" in the UI; adb bypasses it. Survives app updates (verified).
 - Remote key layout `/system/usr/keylayout/Vendor_18d1_Product_9451.kl`: MACRO_1, BUTTON_3 (YouTube key), BUTTON_4 (Netflix key).
@@ -80,6 +81,13 @@
 
 ## Stremio (com.stremio.one 1.11.2)
 - Ships libmpv + libVLC + Media3 (+libass); has subtitle-delay code (`sub-delay`, `subtitlesDelay`). No external API.
+
+## Cameras (L2)
+- DVR `10.0.0.14` = TVT/Provision-ISR (`Server: Apache`, Digest realm "RTSP SERVER"); paths `/chID=N&streamType=main|sub`.
+  Without valid login every path returns 401, so the format can only be detected after login (`RtspProbe`).
+- Card: Media3 RTSP (TCP) in `CameraService` (`:camera` process), rendering into the launcher's TextureView Surface
+  passed over AIDL. Starts 1.2 s after home shows, stops on `onStop`. Full screen = `CameraActivity` (also `:camera`).
+- Settings text fields: `TextRow` (row → field on OK) so D-pad browsing doesn't pop the keyboard; IME shows Latin.
 
 ## Self-update
 - Releases `v1.0.<run>`; asset `tv-home.apk`; PackageInstaller session; first adb-installed copy needs a confirm dialog.
