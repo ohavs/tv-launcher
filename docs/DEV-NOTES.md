@@ -66,6 +66,27 @@
 - Cinematic layout reads `lastIndex` while composing → `focusMoves` state forces recomposition on focus moves.
 - ImageLoader cache key includes the requested width (thumbnails vs backdrops).
 
+## Performance (measured 2026-10-27, `dumpsys gfxinfo` + `framestats` while pressing DPAD)
+- GPU (PowerVR) is fill-rate bound: each full-screen translucent pass costs ~5 ms. Wallpaper/backdrop + scrims live in
+  one `CompositingStrategy.Offscreen` layer (cached, redrawn only when the picture changes); no window background
+  (`setBackgroundDrawable(null)`) and no root background. Check with `setprop debug.hwui.overdraw show` +
+  `service call activity 1599295570`; set it back to `false` after.
+- Blurred text shadows (`Shadow(blurRadius)`) cost ~3 ms of RenderThread per frame → none; scrims keep text legible.
+- TextureView redraws the whole window on every video frame (2 cameras = ~25 redraws/s, 34% CPU idle). Dashboard
+  cameras use SurfaceView (punches a hole; rounded clip works because the window around it is opaque). It can't
+  fade (alpha < 1 → offscreen layer → no hole) or follow 3D rotation (`tilt = false`). 2 SurfaceViews + full-screen
+  camera + grid cycled: no HWC crash.
+- `HomeScreen` content is one recompose scope (Box/Column are inline): read focus state only in `derivedStateOf`
+  or inside `Isolated { }`; the focused tile's zIndex comes from the tile itself.
+- Sideloaded installs are only `verify` (Compose interpreted/JIT): ~2× the janky frames. `baseline-prof.txt`
+  (wildcards over our code + Compose/Kotlin) → AGP writes `outputs/apk/release/baselineProfiles/*/app-release.dm`;
+  the API 31+ one is released as `tv-home.dm` and the updater adds it to the install session as `base.dm`
+  → `speed-profile` at install. Local: `adb install-multiple -r app-release.apk baselineProfiles/<n>/app-release.dm`
+  (`<n>` from `output-metadata.json`, minApi 31). Check: `dumpsys package dexopt | grep -A3 "\[com.ohav.tvhome\]"`.
+- Restart the app process without `force-stop` (which drops the accessibility service): `am crash <pid>`.
+- After the fix (classic layout, 2 cameras): idle 0 frames; D-pad ~6% janky, p99 ~60 ms (was 45–65%, p99 150 ms).
+  PSS ~143 MB (odex + background layer).
+
 ## TV provider (Top Shelf)
 - Needs `READ_EPG_DATA` (normal) **and** `android.permission.READ_TV_LISTINGS` (runtime on 14; `pm grant`).
 - Non-privileged callers: no selection allowed → query all, filter in code. Preview channels exist for YouTube,
@@ -94,7 +115,7 @@
   the whole UI). Multi-video screens must use TextureView. One full-screen SurfaceView is fine.
 - MediaTek `c2.mtk.avc.decoder`: ~4 instances, then `NO_MEMORY` → `setEnableDecoderFallback(true)` (software decoder).
   Without valid login every path returns 401, so the format can only be detected after login (`RtspProbe`).
-- Card: Media3 RTSP (TCP) in `CameraService` (`:camera` process), rendering into the launcher's TextureView Surface
+- Card: Media3 RTSP (TCP) in `CameraService` (`:camera` process), rendering into the launcher's SurfaceView Surface
   passed over AIDL. Starts 1.2 s after home shows, stops on `onStop`. Full screen = `CameraActivity` (also `:camera`).
 - Settings text fields: `TextRow` (row → field on OK) so D-pad browsing doesn't pop the keyboard; IME shows Latin.
 
