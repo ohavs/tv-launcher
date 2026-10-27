@@ -15,7 +15,10 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
-data class Release(val versionName: String, val versionCode: Int, val apkUrl: String, val size: Long)
+/** [dmUrl]: the build's baseline profile as dex metadata, so the update is compiled ahead of time on install. */
+data class Release(val versionName: String, val versionCode: Int, val apkUrl: String, val size: Long, val dmUrl: String?)
+
+data class Download(val apk: File, val dm: File?)
 
 /** Self-update from the latest GitHub Release of this repo (tag v1.0.<versionCode>). */
 object UpdateManager {
@@ -35,11 +38,13 @@ object UpdateManager {
             val assets = json.getJSONArray("assets")
             val apk = (0 until assets.length()).map { assets.getJSONObject(it) }
                 .firstOrNull { it.getString("name").endsWith(".apk") } ?: error("no APK in release")
+            val dm = (0 until assets.length()).map { assets.getJSONObject(it) }.firstOrNull { it.getString("name").endsWith(".dm") }
             Release(
                 versionName = tag,
                 versionCode = tag.substringAfterLast('.').toIntOrNull() ?: 0,
                 apkUrl = apk.getString("browser_download_url"),
                 size = apk.optLong("size"),
+                dmUrl = dm?.getString("browser_download_url"),
             )
         } finally {
             conn.disconnect()
@@ -65,16 +70,22 @@ object UpdateManager {
         }
     }
 
-    suspend fun download(context: Context, r: Release, onProgress: (Int) -> Unit): File = withContext(Dispatchers.IO) {
-        val out = File(context.cacheDir, "update.apk")
-        val conn = (URL(r.apkUrl).openConnection() as HttpURLConnection).apply {
+    suspend fun download(context: Context, r: Release, onProgress: (Int) -> Unit): Download = withContext(Dispatchers.IO) {
+        val apk = fetch(r.apkUrl, File(context.cacheDir, "update.apk"), r.size, onProgress)
+        // Without it the update runs uncompiled until the system's overnight compile: skip it rather than fail.
+        val dm = r.dmUrl?.let { url -> runCatching { fetch(url, File(context.cacheDir, "update.dm"), 0) { } }.getOrNull() }
+        Download(apk, dm)
+    }
+
+    private suspend fun fetch(url: String, out: File, size: Long, onProgress: (Int) -> Unit): File {
+        val conn = (URL(url).openConnection() as HttpURLConnection).apply {
             instanceFollowRedirects = true
             connectTimeout = 15_000
             readTimeout = 30_000
         }
         try {
             if (conn.responseCode !in 200..299) error("download ${conn.responseCode}")
-            val total = conn.contentLengthLong.takeIf { it > 0 } ?: r.size
+            val total = conn.contentLengthLong.takeIf { it > 0 } ?: size
             conn.inputStream.use { input ->
                 out.outputStream().use { output ->
                     val buf = ByteArray(64 * 1024)
@@ -90,13 +101,14 @@ object UpdateManager {
                     }
                 }
             }
-            out
+            return out
         } finally {
             conn.disconnect()
         }
     }
 
-    fun install(context: Context, apk: File) {
+    fun install(context: Context, download: Download) {
+        val (apk, dm) = download
         val installer = context.packageManager.packageInstaller
         val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL).apply {
             setAppPackageName(context.packageName)
@@ -106,6 +118,10 @@ object UpdateManager {
         installer.openSession(id).use { session ->
             session.openWrite("base.apk", 0, apk.length()).use { out ->
                 apk.inputStream().use { it.copyTo(out) }
+                session.fsync(out)
+            }
+            if (dm != null) session.openWrite("base.dm", 0, dm.length()).use { out ->
+                dm.inputStream().use { it.copyTo(out) }
                 session.fsync(out)
             }
             val pending = PendingIntent.getBroadcast(

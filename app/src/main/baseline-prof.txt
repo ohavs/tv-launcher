@@ -1,0 +1,11 @@
+# Compiled ahead of time on install. A sideloaded APK is otherwise only verified, and Compose running
+# interpreted / JIT on this CPU about doubles the dropped frames while moving around the home screen.
+Lcom/ohav/tvhome/**;
+HSPLcom/ohav/tvhome/**;->**(**)**
+Landroidx/compose/**;
+HSPLandroidx/compose/**;->**(**)**
+HSPLandroidx/activity/**;->**(**)**
+HSPLandroidx/lifecycle/**;->**(**)**
+HSPLkotlinx/coroutines/**;->**(**)**
+HSPLkotlin/**;->**(**)**
+HSPLandroidx/media3/**;->**(**)**

@@ -122,9 +122,9 @@ private fun SettingsScreen() {
         scope.launch {
             runCatching {
                 update = UpdateUi.Downloading(0)
-                val apk = UpdateManager.download(context, r) { update = UpdateUi.Downloading(it) }
+                val download = UpdateManager.download(context, r) { update = UpdateUi.Downloading(it) }
                 update = UpdateUi.Installing
-                UpdateManager.install(context, apk)
+                UpdateManager.install(context, download)
             }.onFailure { update = UpdateUi.Failed(it.message ?: it.javaClass.simpleName) }
         }
     }

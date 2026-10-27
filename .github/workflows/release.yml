@@ -45,12 +45,15 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon :app:assembleRelease
           cp app/build/outputs/apk/release/app-release.apk tv-home.apk
+          # Baseline profile for Android 12+ as dex metadata: the in-app updater installs it with the APK.
+          out=app/build/outputs/apk/release
+          cp "$out/$(jq -r '.baselineProfiles[] | select(.minApi >= 31) | .baselineProfiles[0]' $out/output-metadata.json)" tv-home.dm
 
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v1.0.${{ github.run_number }}" tv-home.apk \
+          gh release create "v1.0.${{ github.run_number }}" tv-home.apk tv-home.dm \
             --title "TV Home 1.0.${{ github.run_number }}" \
             --notes "$(git log -1 --pretty=%s)" \
             --latest
