@@ -19,6 +19,13 @@
 - InnerTube responses arrive by XHR (`responseType ''`) + `JSON.parse` → the `JSON.parse` hook in
   `assets/youtube/tvhome.js` empties `adPlacements`/`adSlots` (verified: raw had 2/3, video starts with no ad).
   Calling `/youtubei/v1/player` ourselves from the page → LOGIN_REQUIRED (needs the app's attestation).
+- **Server-side ad wait (v1.0.14 fix):** stripping ads client-side isn't enough — googlevideo then answers the first
+  media requests with UMP parts `67` (SNACKBAR_MESSAGE) + `58` and **no media** for ~10 s (replays too), so the video
+  started ~12 s after the click behind WebView's grey "play" poster. Fix: `isInlinePlaybackNoAd: true` in the player
+  request's `playbackContext.contentPlaybackContext` (as inline previews do) → server schedules no ads, start ~2 s;
+  formats/tracking/captions unchanged. The player request goes through **onesie** (`initplayback` on googlevideo,
+  not an XHR), so the only hook point is `JSON.stringify` of the request object (`tvhome.js`).
+  `getDefaultVideoPoster()` returns 1×1 so any loading shows black, not the grey poster.
 - **Many videos are Widevine-DRM'd for TV clients.** The player asks EME for `HW_SECURE_ALL`/`SW_SECURE_DECODE` and
   Cobalt-only MIME params (`enableflushduringseek=true`); WebView supports only `SW_SECURE_CRYPTO` → "This video
   format is not supported". Fix in tvhome.js: retry with plain MIME + SW_SECURE_CRYPTO and report the requested

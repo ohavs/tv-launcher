@@ -3,6 +3,7 @@ package com.ohav.tvhome.youtube
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -165,6 +166,9 @@ class YouTubeActivity : ComponentActivity() {
     private fun dp(v: Int) =(v * resources.displayMetrics.density).toInt()
 
     private inner class Chrome : WebChromeClient() {
+        // Without this, a <video> with no frame yet shows WebView's grey "play" poster, stretched.
+        override fun getDefaultVideoPoster(): Bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+
         override fun onConsoleMessage(message: ConsoleMessage): Boolean {
             if (debug) Log.d(TAG, "console: ${message.message()} (${message.sourceId()}:${message.lineNumber()})")
             return true

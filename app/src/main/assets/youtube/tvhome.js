@@ -51,6 +51,16 @@
     }
   };
 
+  // Stripping ads from the response alone isn't enough: the media server still knows the session was
+  // given ads and holds the video back for ~10 s (UMP "snackbar" replies, no media). Asking for the
+  // player the way inline previews do makes the server schedule no ads at all.
+  const stringify = JSON.stringify;
+  JSON.stringify = function (value) {
+    const ctx = value && typeof value === 'object' && value.videoId && value.playbackContext?.contentPlaybackContext;
+    if (ctx) ctx.isInlinePlaybackNoAd = true;
+    return stringify.apply(this, arguments);
+  };
+
   const parse = JSON.parse;
   JSON.parse = function (text, reviver) {
     const r = parse.call(this, text, reviver);
