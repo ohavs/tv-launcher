@@ -19,3 +19,4 @@
 ## Last session (2026-10-24)
 - Google Home remote button fixed (v1.0.5). Wrote `docs/ROADMAP.md` + `docs/DEV-NOTES.md`.
 - Lesson: `monkey` started Spotify (random media key) — never use it (see DEV-NOTES).
+- 2026-10-26: Spotify auto-play/"connected" investigated — Spotify Connect + its boot receiver, not TV Home. No change (user declined).

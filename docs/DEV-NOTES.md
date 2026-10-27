@@ -40,6 +40,9 @@
 - Spotify TV app runs a BLE GATT server + DIAL for Spotify Connect; nearby phones on the same account connect and
   can start playback on the Streamer (even with the TV off). Seen 2026-10-24 after a `monkey` test started playback.
 - Fix: `am force-stop com.spotify.tv.android` (stays stopped until opened/cast) + user picks "This phone" in Spotify.
+- Spotify has `com.spotify.androidtv.bootreceiver.BootReceiver` → starts at every boot and keeps a paused media
+  session, so Google Home shows "Spotify" on the Streamer. User declined disabling the receiver (2026-10-26).
+- Streamer never fully powers off (networked standby for Cast / Google Home hub); `mWakefulness=Asleep` is normal.
 
 ## Audio
 - HDMI is a *full-volume* device; `mHdmiCecVolumeControlEnabled=false`; no absolute-volume devices.
