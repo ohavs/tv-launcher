@@ -1,5 +1,7 @@
 package com.ohav.tvhome
 
+import com.ohav.tvhome.camera.CameraActivity
+import com.ohav.tvhome.data.CameraPrefs
 import android.app.ActivityOptions
 import android.content.ComponentName
 import android.content.Intent
@@ -30,6 +32,7 @@ class HomeController(private val activity: ComponentActivity) {
     val repo = AppRepository(activity)
     val shelf = ShelfRepository(activity)
     val nowPlaying = NowPlaying(activity)
+    private val cameraPrefs = CameraPrefs(activity)
     val packageName: String = activity.packageName
 
     var apps by mutableStateOf<List<AppEntry>>(emptyList())
@@ -37,6 +40,9 @@ class HomeController(private val activity: ComponentActivity) {
     var tileStyle by mutableStateOf(prefs.tileStyle)
         private set
     var weather by mutableStateOf(prefs.weather)
+        private set
+    /** DVR cameras for the dashboard, when set up. */
+    var camera by mutableStateOf(cameraPrefs.config())
         private set
     /** Google Home panel, when the system has it. */
     val smartHome: ComponentName? = activity.packageManager.resolveActivity(Intent(SMART_HOME_ACTION), 0)
@@ -59,6 +65,7 @@ class HomeController(private val activity: ComponentActivity) {
         shelf.invalidate()
         resumeSignal++
         tileStyle = prefs.tileStyle
+        camera = cameraPrefs.config()
         if (all.isNotEmpty()) apps = prefs.arrange(all)
         refreshWeather()
     }
@@ -93,6 +100,11 @@ class HomeController(private val activity: ComponentActivity) {
         if (nowPlaying.open()) return
         val pkg = nowPlaying.track?.packageName ?: return
         apps.firstOrNull { it.packageName == pkg }?.let { launch(it, from) }
+    }
+
+    fun openCamera(from: Rect) {
+        val config = camera ?: return
+        start(CameraActivity.intent(activity, config), from)
     }
 
     fun hide(app: AppEntry) {

@@ -42,6 +42,9 @@ import com.ohav.tvhome.R
 import com.ohav.tvhome.HomeKeyService
 import com.ohav.tvhome.ui.WALLPAPERS
 import com.ohav.tvhome.data.AppRepository
+import com.ohav.tvhome.data.CameraPrefs
+import com.ohav.tvhome.data.RtspProbe
+import com.ohav.tvhome.data.ScanResult
 import com.ohav.tvhome.data.CITIES
 import com.ohav.tvhome.data.Prefs
 import com.ohav.tvhome.data.TileStyle
@@ -85,6 +88,16 @@ private fun SettingsScreen() {
     var cityId by remember { mutableStateOf(prefs.cityId) }
     var showCities by remember { mutableStateOf(false) }
     var mediaAccess by remember { mutableStateOf(false) }
+    val cams = remember { CameraPrefs(context) }
+    var camEnabled by remember { mutableStateOf(cams.enabled) }
+    var camHost by remember { mutableStateOf(cams.host) }
+    var camUser by remember { mutableStateOf(cams.user) }
+    var camPass by remember { mutableStateOf(cams.pass) }
+    var camFound by remember { mutableStateOf(cams.found) }
+    var camHidden by remember { mutableStateOf(cams.hidden) }
+    var camPrimary by remember { mutableStateOf(cams.primary) }
+    var scanText by remember { mutableStateOf<String?>(null) }
+    var scanning by remember { mutableStateOf(false) }
     val first = remember { FocusRequester() }
     val allApps by produceState(emptyList(), hidden) { value = AppRepository(context).load() }
 
@@ -111,6 +124,27 @@ private fun SettingsScreen() {
                 update = UpdateUi.Installing
                 UpdateManager.install(context, apk)
             }.onFailure { update = UpdateUi.Failed(it.message ?: it.javaClass.simpleName) }
+        }
+    }
+
+    fun scanCameras() {
+        if (scanning) return
+        scanning = true
+        scanText = context.getString(R.string.camera_scanning)
+        scope.launch {
+            val r = RtspProbe.scan(camHost, camUser, camPass)
+            if (r is ScanResult.Found) {
+                cams.format = r.format
+                cams.found = r.channels
+                camFound = r.channels
+            }
+            scanText = when (r) {
+                is ScanResult.Found -> context.getString(R.string.camera_found, r.channels.size)
+                ScanResult.BadLogin -> context.getString(R.string.camera_bad_login)
+                ScanResult.NoStreams -> context.getString(R.string.camera_none)
+                is ScanResult.Unreachable -> context.getString(R.string.camera_unreachable, camHost)
+            }
+            scanning = false
         }
     }
 
@@ -198,6 +232,52 @@ private fun SettingsScreen() {
                         stringResource(R.string.media_access),
                         value = stringResource(if (mediaAccess) R.string.allowed else R.string.not_allowed),
                     ) { }
+
+                    SectionTitle(stringResource(R.string.cameras))
+                    MenuRow(stringResource(R.string.camera_on_dashboard), value = stringResource(if (camEnabled) R.string.on else R.string.off)) {
+                        camEnabled = !camEnabled
+                        cams.enabled = camEnabled
+                    }
+                    val notSet = stringResource(R.string.not_set)
+                    TextRow(stringResource(R.string.dvr_address), camHost, notSet) {
+                        camHost = it.trim()
+                        cams.host = camHost
+                    }
+                    TextRow(stringResource(R.string.dvr_user), camUser, notSet) {
+                        camUser = it.trim()
+                        cams.user = camUser
+                    }
+                    TextRow(stringResource(R.string.dvr_password), camPass, notSet, password = true) {
+                        val changed = it != camPass
+                        camPass = it
+                        cams.pass = it
+                        if (changed && camUser.isNotEmpty()) scanCameras()
+                    }
+                    MenuRow(
+                        stringResource(R.string.camera_scan),
+                        value = scanText ?: if (camFound.isNotEmpty()) stringResource(R.string.camera_found, camFound.size) else null,
+                    ) { scanCameras() }
+                    val dashboardCam = camFound.firstOrNull { it == camPrimary && it !in camHidden } ?: camFound.firstOrNull { it !in camHidden }
+                    camFound.forEach { ch ->
+                        val label = when {
+                            ch in camHidden -> R.string.camera_hidden
+                            ch == dashboardCam -> R.string.camera_primary
+                            else -> R.string.camera_shown
+                        }
+                        // Shown -> on the dashboard -> hidden -> shown.
+                        MenuRow(stringResource(R.string.camera_n, ch), value = stringResource(label)) {
+                            when {
+                                ch in camHidden -> camHidden = camHidden - ch
+                                ch == dashboardCam -> {
+                                    camHidden = camHidden + ch
+                                    if (camPrimary == ch) camPrimary = 0
+                                }
+                                else -> camPrimary = ch
+                            }
+                            cams.hidden = camHidden
+                            cams.primary = camPrimary
+                        }
+                    }
 
                     SectionTitle(stringResource(R.string.hidden_apps))
                     val hiddenApps = allApps.filter { it.id in hidden }

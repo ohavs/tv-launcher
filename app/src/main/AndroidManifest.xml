@@ -83,6 +83,20 @@
             </intent-filter>
         </service>
 
+        <!-- Cameras decode in their own process: launcher memory stays flat and a bad stream can't take it down. -->
+        <service
+            android:name=".camera.CameraService"
+            android:exported="false"
+            android:process=":camera" />
+
+        <activity
+            android:name=".camera.CameraActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode|density|locale|layoutDirection"
+            android:exported="false"
+            android:process=":camera"
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.TvHome" />
+
         <receiver
             android:name=".update.InstallResultReceiver"
             android:exported="false" />

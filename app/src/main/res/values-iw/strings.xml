@@ -48,4 +48,22 @@
     <string name="media_access">«מתנגן עכשיו» בדשבורד</string>
     <string name="allowed">מאושר</string>
     <string name="not_allowed">לא מאושר (להריץ install-launcher.cmd)</string>
+    <string name="cameras">מצלמות</string>
+    <string name="camera_on_dashboard">מצלמה בדשבורד</string>
+    <string name="dvr_address">כתובת ה-DVR</string>
+    <string name="dvr_user">שם משתמש</string>
+    <string name="dvr_password">סיסמה</string>
+    <string name="not_set">לא הוגדר</string>
+    <string name="camera_scan">חיפוש מצלמות</string>
+    <string name="camera_scanning">מחפש…</string>
+    <string name="camera_found">נמצאו %1$d</string>
+    <string name="camera_bad_login">שם משתמש או סיסמה שגויים</string>
+    <string name="camera_none">לא נמצאו מצלמות</string>
+    <string name="camera_unreachable">אין חיבור ל-%1$s</string>
+    <string name="camera_n">מצלמה %1$d</string>
+    <string name="camera_primary">בדשבורד</string>
+    <string name="camera_shown">מוצגת</string>
+    <string name="camera_hidden">מוסתרת</string>
+    <string name="camera_connecting">מתחבר…</string>
+    <string name="camera_offline">אין אות</string>
 </resources>

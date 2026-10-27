@@ -115,6 +115,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
     val widgetIds = buildList {
         if (track != null) { add("w:now"); add("w:pp") }
         if (home.smartHome != null) add("w:home")
+        if (home.camera != null) add("w:cam")
     }
     fun ids(s: Section): List<String> = when (s) {
         Section.Top -> topIds
@@ -246,8 +247,12 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                             PlayPauseButton(track.playing, req("w:pp"), { onFocused(Section.Widgets, iPp) }, home.nowPlaying::playPause)
                         }
                         if (home.smartHome != null) {
-                            val iHome = i
+                            val iHome = i++
                             SmartHomeCard(req("w:home"), { onFocused(Section.Widgets, iHome) }, home::openSmartHome, 80.dp)
+                        }
+                        home.camera?.let { cam ->
+                            val iCam = i
+                            CameraCard(cam, active = !showAll, req("w:cam"), { onFocused(Section.Widgets, iCam) }, home::openCamera, 80.dp)
                         }
                     }
                 }

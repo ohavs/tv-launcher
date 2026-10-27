@@ -1,0 +1,189 @@
+package com.ohav.tvhome.ui
+
+import android.graphics.Matrix
+import android.graphics.SurfaceTexture
+import android.os.Handler
+import android.os.Looper
+import android.view.Surface
+import android.view.TextureView
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.LifecycleStartEffect
+import com.ohav.tvhome.R
+import com.ohav.tvhome.camera.CAM_CONNECTING
+import com.ohav.tvhome.camera.CAM_ERROR
+import com.ohav.tvhome.camera.CAM_PLAYING
+import com.ohav.tvhome.camera.CameraLink
+import com.ohav.tvhome.camera.ICameraListener
+import com.ohav.tvhome.data.CameraConfig
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import kotlin.math.max
+
+/** Holds the TextureView's SurfaceTexture; released only once the camera process has let go of it. */
+private class TextureSlot {
+    var texture by mutableStateOf<SurfaceTexture?>(null)
+    var inUse = false
+    var orphan: SurfaceTexture? = null
+}
+
+/**
+ * Live view of the first camera channel. Decoding happens in the `:camera` process; it starts a moment after
+ * the home screen shows (so it never slows the launch) and stops whenever the launcher is not visible.
+ */
+@Composable
+fun CameraCard(
+    config: CameraConfig,
+    active: Boolean,
+    requester: FocusRequester,
+    onFocused: () -> Unit,
+    onClick: (Rect) -> Unit,
+    height: Dp,
+) {
+    val context = LocalContext.current
+    val slot = remember { TextureSlot() }
+    var state by remember { mutableIntStateOf(CAM_CONNECTING) }
+    var videoW by remember { mutableIntStateOf(0) }
+    var videoH by remember { mutableIntStateOf(0) }
+    var started by remember { mutableStateOf(false) }
+    val channel = config.channels.first()
+    val url = config.url(channel, sub = true)
+
+    LifecycleStartEffect(Unit) {
+        started = true
+        onStopOrDispose { started = false }
+    }
+
+    val listener = remember {
+        val main = Handler(Looper.getMainLooper())
+        object : ICameraListener.Stub() {
+            override fun onState(s: Int, message: String?) {
+                main.post { state = s }
+            }
+
+            override fun onVideoSize(width: Int, height: Int) {
+                main.post { videoW = width; videoH = height }
+            }
+        }
+    }
+
+    LaunchedEffect(slot.texture, started && active, url) {
+        val texture = slot.texture ?: return@LaunchedEffect
+        if (!started || !active) return@LaunchedEffect
+        state = CAM_CONNECTING
+        delay(1200)
+        val link = runCatching { CameraLink.connect(context.applicationContext) { state = CAM_ERROR } }.getOrElse {
+            state = CAM_ERROR
+            return@LaunchedEffect
+        }
+        val surface = Surface(texture)
+        slot.inUse = true
+        try {
+            withContext(Dispatchers.IO) { link.player.play(surface, url, listener) }
+            awaitCancellation()
+        } finally {
+            withContext(NonCancellable + Dispatchers.IO) { runCatching { link.player.stop() } }
+            link.close()
+            surface.release()
+            slot.inUse = false
+            slot.orphan?.release()
+            slot.orphan = null
+        }
+    }
+
+    val shown by animateFloatAsState(if (state == CAM_PLAYING) 1f else 0f, tween(500), label = "cam")
+    GlassButton(requester, onFocused, onClick, Modifier.size(height * 16f / 9f, height)) { f ->
+        AndroidView(
+            factory = { ctx ->
+                TextureView(ctx).apply {
+                    isOpaque = false
+                    surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+                        override fun onSurfaceTextureAvailable(st: SurfaceTexture, w: Int, h: Int) {
+                            slot.texture = st
+                        }
+
+                        override fun onSurfaceTextureSizeChanged(st: SurfaceTexture, w: Int, h: Int) = Unit
+                        override fun onSurfaceTextureUpdated(st: SurfaceTexture) = Unit
+
+                        override fun onSurfaceTextureDestroyed(st: SurfaceTexture): Boolean {
+                            slot.texture = null
+                            if (!slot.inUse) return true
+                            slot.orphan = st
+                            return false
+                        }
+                    }
+                }
+            },
+            update = { it.cropTo(videoW, videoH) },
+            modifier = Modifier.fillMaxSize().graphicsLayer { alpha = shown },
+        )
+        if (state != CAM_PLAYING) {
+            Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+                GlyphIcon(Glyph.Camera, Color.White.copy(alpha = 0.7f), 26.dp)
+                Text(
+                    stringResource(if (state == CAM_ERROR) R.string.camera_offline else R.string.camera_connecting),
+                    color = Color.White.copy(alpha = 0.6f), fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.55f * shown))))
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(6.dp).clip(CircleShape).background(if (state == CAM_PLAYING) Color(0xFFFF4D4D) else Color.White.copy(alpha = 0.4f)))
+                Text(
+                    "  " + stringResource(R.string.camera_n, channel),
+                    color = Color.White.copy(alpha = 0.75f + 0.25f * f), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
+/** Center-crop the video into the view (TextureView stretches by default). */
+private fun TextureView.cropTo(videoW: Int, videoH: Int) {
+    val vw = width.toFloat()
+    val vh = height.toFloat()
+    if (vw == 0f || vh == 0f || videoW == 0 || videoH == 0) return
+    val scale = max(vw / videoW, vh / videoH)
+    setTransform(Matrix().apply { setScale(videoW * scale / vw, videoH * scale / vh, vw / 2, vh / 2) })
+}

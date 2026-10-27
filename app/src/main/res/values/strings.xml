@@ -48,4 +48,22 @@
     <string name="media_access">Now playing on the dashboard</string>
     <string name="allowed">Allowed</string>
     <string name="not_allowed">Not allowed (run install-launcher.cmd)</string>
+    <string name="cameras">Cameras</string>
+    <string name="camera_on_dashboard">Camera on the dashboard</string>
+    <string name="dvr_address">DVR address</string>
+    <string name="dvr_user">User name</string>
+    <string name="dvr_password">Password</string>
+    <string name="not_set">Not set</string>
+    <string name="camera_scan">Find cameras</string>
+    <string name="camera_scanning">Searching…</string>
+    <string name="camera_found">%1$d found</string>
+    <string name="camera_bad_login">Wrong user name or password</string>
+    <string name="camera_none">No cameras found</string>
+    <string name="camera_unreachable">Can\'t reach %1$s</string>
+    <string name="camera_n">Camera %1$d</string>
+    <string name="camera_primary">On the dashboard</string>
+    <string name="camera_shown">Shown</string>
+    <string name="camera_hidden">Hidden</string>
+    <string name="camera_connecting">Connecting…</string>
+    <string name="camera_offline">No signal</string>
 </resources>
