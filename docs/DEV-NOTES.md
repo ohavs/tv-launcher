@@ -25,7 +25,8 @@
 - Top activity: `dumpsys activity activities | grep -m1 topResumedActivity`.
 - Screenshot: `adb exec-out screencap -p > backup/x.png` (backup/ is gitignored); downscale before viewing.
 - Local builds: `BUILD_NUMBER=<next CI run number> ./gradlew :app:assembleRelease`, else adb refuses a versionCode downgrade.
-  The first `-q` build after edits sometimes fails in ~3 s with no message; running it again works.
+  The first build after edits sometimes fails in ~4 s with no message; check for `BUILD SUCCESSFUL` and rerun,
+  otherwise the old APK gets installed.
 - Git Bash: prefix adb commands with `MSYS_NO_PATHCONV=1`, else `/data/local/tmp/...` is rewritten to a Windows path.
 - D-pad tests: `input keyevent DPAD_*` is fine (only Home/Google Home need `tools/hid`). Contact sheets:
   Pillow is in `C:/Users/ohav8/AppData/Local/Programs/Python/Python310/python.exe`.
@@ -60,7 +61,10 @@
   `cmd notification allow_listener com.ohav.tvhome/com.ohav.tvhome.media.MediaListener` (install script does it).
   Paused sessions older than 30 min are hidden (Spotify's boot session).
 - Weather: Open-Meteo, refreshed on resume when > 30 min old; city from a fixed list (no keyboard).
-- Memory after the redesign: ~132 MB PSS on home (Graphics ~57 MB). Budget 150 MB.
+- Memory: decode wallpaper/artwork as `Bitmap.Config.HARDWARE` (one GPU copy instead of heap + texture):
+  home with 2 live cameras 106 MB PSS classic, ~135 MB cinematic (1280px backdrops). Budget 150 MB.
+- Cinematic layout reads `lastIndex` while composing → `focusMoves` state forces recomposition on focus moves.
+- ImageLoader cache key includes the requested width (thumbnails vs backdrops).
 
 ## TV provider (Top Shelf)
 - Needs `READ_EPG_DATA` (normal) **and** `android.permission.READ_TV_LISTINGS` (runtime on 14; `pm grant`).
@@ -84,6 +88,11 @@
 
 ## Cameras (L2)
 - DVR `10.0.0.14` = TVT/Provision-ISR (`Server: Apache`, Digest realm "RTSP SERVER"); paths `/chID=N&streamType=main|sub`.
+  8 channels; 5/7/8 send black frames (no camera). Main = 960x1080 (1080N), sub = 352x288 (CIF), H.264, no aspect
+  info → always display 16:9 (`displayAspect`).
+- **8 SurfaceView video layers at once crashed the vendor HWC** (`hwcomposer.mt8696` BlitJob SIGSEGV → soft reboot of
+  the whole UI). Multi-video screens must use TextureView. One full-screen SurfaceView is fine.
+- MediaTek `c2.mtk.avc.decoder`: ~4 instances, then `NO_MEMORY` → `setEnableDecoderFallback(true)` (software decoder).
   Without valid login every path returns 401, so the format can only be detected after login (`RtspProbe`).
 - Card: Media3 RTSP (TCP) in `CameraService` (`:camera` process), rendering into the launcher's TextureView Surface
   passed over AIDL. Starts 1.2 s after home shows, stops on `onStop`. Full screen = `CameraActivity` (also `:camera`).
