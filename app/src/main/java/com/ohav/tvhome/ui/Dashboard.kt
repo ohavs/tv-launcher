@@ -64,7 +64,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-/** Big clock, date and today's weather — the calm, always-visible part of the dashboard. */
+/** Clock with the date and today's weather beside it — the calm, always-visible part of the dashboard. */
 @Composable
 fun ClockBlock(weather: WeatherNow?, city: City, modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -76,14 +76,15 @@ fun ClockBlock(weather: WeatherNow?, city: City, modifier: Modifier = Modifier) 
     }
     val time = DateFormat.getTimeFormat(context).format(now)
     val date = DateFormat.format(DateFormat.getBestDateTimePattern(Locale.getDefault(), "EEEEdMMMM"), now).toString()
-    Column(modifier) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         Text(
             time,
             color = Color.White,
-            fontSize = 62.sp,
+            fontSize = 56.sp,
             fontWeight = FontWeight.Light,
-            style = TextStyle(shadow = LegibleShadow, letterSpacing = (-1).sp, lineHeight = 66.sp),
+            style = TextStyle(shadow = LegibleShadow, letterSpacing = (-1).sp, lineHeight = 60.sp),
         )
+        Column(Modifier.padding(start = 20.dp)) {
         Text(
             date,
             color = Color.White.copy(alpha = 0.92f),
@@ -107,6 +108,7 @@ fun ClockBlock(weather: WeatherNow?, city: City, modifier: Modifier = Modifier) 
                     style = TextStyle(shadow = LegibleShadow),
                 )
             }
+        }
         }
     }
 }
@@ -235,6 +237,26 @@ fun PlayPauseButton(playing: Boolean, requester: FocusRequester, onFocused: () -
     CircleButton(if (playing) Glyph.Pause else Glyph.Play, requester, onFocused, { onClick() }, size = 52.dp)
 }
 
+/** Opens the grid of every camera. */
+@Composable
+fun AllCamerasCard(count: Int, requester: FocusRequester, onFocused: () -> Unit, onClick: (Rect) -> Unit, height: Dp) {
+    GlassButton(requester, onFocused, onClick, Modifier.size(height * 1.3f, height)) { f ->
+        Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+            GlyphIcon(Glyph.Apps, Color.White.copy(alpha = 0.85f + 0.15f * f), 24.dp)
+            Text(
+                stringResource(R.string.all_cameras),
+                color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+                modifier = Modifier.padding(top = 6.dp),
+            )
+            Text(
+                stringResource(R.string.cameras_count, count),
+                color = Color.White.copy(alpha = 0.55f + 0.2f * f), fontSize = 11.sp, maxLines = 1,
+            )
+        }
+    }
+}
+
+/** Google Home shortcut — hidden for now; may come back with live device data. */
 @Composable
 fun SmartHomeCard(requester: FocusRequester, onFocused: () -> Unit, onClick: (Rect) -> Unit, height: Dp) {
     GlassButton(requester, onFocused, onClick, Modifier.size(height * 2.5f, height)) { f ->

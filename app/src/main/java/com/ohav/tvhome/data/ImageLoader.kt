@@ -16,7 +16,7 @@ import java.net.URL
 
 /** Tiny image loader for Top Shelf artwork (http(s) and content:// URIs). */
 object ImageLoader {
-    private val cache = object : LruCache<String, ImageBitmap>(32 * 1024 * 1024) {
+    private val cache = object : LruCache<String, ImageBitmap>(20 * 1024 * 1024) {
         override fun sizeOf(key: String, value: ImageBitmap) = value.width * value.height * 4
     }
     private val gate = Semaphore(4)
@@ -35,7 +35,7 @@ object ImageLoader {
                     while (bounds.outWidth / (sample * 2) >= maxWidth) sample *= 2
                     val opts = BitmapFactory.Options().apply {
                         inSampleSize = sample
-                        inPreferredConfig = Bitmap.Config.ARGB_8888
+                        inPreferredConfig = Bitmap.Config.HARDWARE
                     }
                     BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)?.asImageBitmap()
                 }.getOrNull()?.also { cache.put(uri, it) }

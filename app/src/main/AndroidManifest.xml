@@ -97,6 +97,14 @@
             android:screenOrientation="landscape"
             android:theme="@style/Theme.TvHome" />
 
+        <activity
+            android:name=".camera.CameraGridActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode|density|locale|layoutDirection"
+            android:exported="false"
+            android:process=":camera"
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.TvHome" />
+
         <receiver
             android:name=".update.InstallResultReceiver"
             android:exported="false" />

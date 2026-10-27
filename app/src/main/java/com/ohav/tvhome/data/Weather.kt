@@ -9,7 +9,7 @@ import java.net.URL
 import java.util.Locale
 import kotlin.math.roundToInt
 
-enum class TileStyle { Color, Mono, Banner }
+enum class TileStyle { Round, Banner }
 
 data class City(val id: String, val he: String, val en: String, val lat: Double, val lon: Double) {
     val name: String get() = if (Locale.getDefault().language in setOf("iw", "he")) he else en

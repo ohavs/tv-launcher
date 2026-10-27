@@ -42,8 +42,7 @@
     <string name="appearance">Appearance</string>
     <string name="weather_city">Weather city</string>
     <string name="tile_style">App tiles</string>
-    <string name="tile_color">Icons</string>
-    <string name="tile_mono">Monochrome</string>
+    <string name="tile_round">Round</string>
     <string name="tile_banner">Banners</string>
     <string name="media_access">Now playing on the dashboard</string>
     <string name="allowed">Allowed</string>
@@ -66,4 +65,6 @@
     <string name="camera_hidden">Hidden</string>
     <string name="camera_connecting">Connecting…</string>
     <string name="camera_offline">No signal</string>
+    <string name="all_cameras">All cameras</string>
+    <string name="cameras_count">%1$d cameras</string>
 </resources>

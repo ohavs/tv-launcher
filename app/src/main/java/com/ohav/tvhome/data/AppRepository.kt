@@ -32,8 +32,6 @@ data class AppEntry(
     val icon: ImageBitmap?,
     /** Adaptive foreground alone, when it reads well on dark glass. */
     val glyph: ImageBitmap?,
-    /** Android 13 themed-icon layer (tinted white for the monochrome style). */
-    val mono: ImageBitmap?,
     /** Icon background colour: the tile fills with it on focus. */
     val brand: Color,
     val accent: Color,
@@ -83,35 +81,33 @@ class AppRepository(private val context: Context) {
             banner = banner?.asImageBitmap(),
             icon = icons.full?.asImageBitmap(),
             glyph = icons.glyph?.asImageBitmap(),
-            mono = icons.mono?.asImageBitmap(),
             brand = icons.brand ?: accent,
             accent = accent,
         )
     }
 
-    private class Icons(val full: Bitmap?, val glyph: Bitmap?, val mono: Bitmap?, val brand: Color?)
+    private class Icons(val full: Bitmap?, val glyph: Bitmap?, val brand: Color?)
 
     /** High-density icon, split into adaptive layers when it has them. */
     private fun iconsFor(ai: ActivityInfo): Icons {
         val d: Drawable = runCatching {
             pm.getResourcesForApplication(ai.applicationInfo)
                 .getDrawableForDensity(ai.iconResource, DisplayMetrics.DENSITY_XXXHIGH, null)
-        }.getOrNull() ?: ai.loadIcon(pm) ?: return Icons(null, null, null, null)
+        }.getOrNull() ?: ai.loadIcon(pm) ?: return Icons(null, null, null)
         if (d !is AdaptiveIconDrawable) {
             val full = d.toBitmap(ICON_PX, ICON_PX, Bitmap.Config.ARGB_8888)
             val keyed = keyOut(full)
-            return Icons(full, keyed?.first?.takeIf { readsOnDark(it) }?.let { trim(it) }, null, keyed?.second)
+            return Icons(full, keyed?.first?.takeIf { readsOnDark(it) }?.let { trim(it) }, keyed?.second)
         }
         val bg = layer(d.background)
         val fg = layer(d.foreground)
-        val mono = if (Build.VERSION.SDK_INT >= 33) layer(d.monochrome) else null
         val full = createBitmap(ICON_PX, ICON_PX).also { b ->
             val c = Canvas(b)
             bg?.let { c.drawBitmap(it, 0f, 0f, null) }
             fg?.let { c.drawBitmap(it, 0f, 0f, null) }
         }
         val glyph = fg?.takeIf { readsOnDark(it) } ?: keyOut(full)?.first?.takeIf { readsOnDark(it) }
-        return Icons(full, glyph?.let { trim(it) }, mono?.let { trim(it) }, bg?.let { averageColor(it) })
+        return Icons(full, glyph?.let { trim(it) }, bg?.let { averageColor(it) })
     }
 
     /** Renders an adaptive layer and crops it to the 72/108 visible area. */

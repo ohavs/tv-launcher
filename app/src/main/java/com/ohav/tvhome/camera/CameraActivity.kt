@@ -135,7 +135,7 @@ class CameraActivity : Activity() {
             }
             return
         }
-        val aspect = video.width * video.pixelWidthHeightRatio / video.height
+        val aspect = displayAspect(video.width * video.pixelWidthHeightRatio, video.height.toFloat())
         val (w, h) = if (pw.toFloat() / ph > aspect) (ph * aspect).toInt() to ph else pw to (pw / aspect).toInt()
         if (lp.width != w || lp.height != h) {
             lp.width = w
@@ -166,11 +166,23 @@ class CameraActivity : Activity() {
         private const val EXTRA_CHANNELS = "channels"
         private const val EXTRA_INDEX = "index"
 
-        fun intent(context: Context, config: CameraConfig, index: Int = 0): Intent =
+        /** Opens [channel]; Left/Right then walks the channels in number order. */
+        fun intent(context: Context, config: CameraConfig, channel: Int): Intent {
+            val channels = config.channels.sorted()
+            return intent(
+                context,
+                channels.map { config.url(it, sub = false) },
+                channels.map { config.url(it, sub = true) },
+                channels,
+                channels.indexOf(channel).coerceAtLeast(0),
+            )
+        }
+
+        fun intent(context: Context, main: List<String>, sub: List<String>, channels: List<Int>, index: Int): Intent =
             Intent(context, CameraActivity::class.java)
-                .putStringArrayListExtra(EXTRA_MAIN, ArrayList(config.channels.map { config.url(it, sub = false) }))
-                .putStringArrayListExtra(EXTRA_SUB, ArrayList(config.channels.map { config.url(it, sub = true) }))
-                .putExtra(EXTRA_CHANNELS, config.channels.toIntArray())
+                .putStringArrayListExtra(EXTRA_MAIN, ArrayList(main))
+                .putStringArrayListExtra(EXTRA_SUB, ArrayList(sub))
+                .putExtra(EXTRA_CHANNELS, channels.toIntArray())
                 .putExtra(EXTRA_INDEX, index)
     }
 }

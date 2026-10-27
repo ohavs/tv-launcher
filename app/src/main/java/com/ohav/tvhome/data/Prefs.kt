@@ -18,7 +18,7 @@ class Prefs(context: Context) {
         set(v) = sp.edit().putInt("pkgSeq", v).apply()
 
     var tileStyle: TileStyle
-        get() = runCatching { TileStyle.valueOf(sp.getString("tileStyle", null)!!) }.getOrDefault(TileStyle.Color)
+        get() = runCatching { TileStyle.valueOf(sp.getString("tileStyle", null)!!) }.getOrDefault(TileStyle.Banner)
         set(v) = sp.edit().putString("tileStyle", v.name).apply()
 
     var cityId: String

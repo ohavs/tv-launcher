@@ -42,8 +42,7 @@
     <string name="appearance">מראה</string>
     <string name="weather_city">עיר למזג האוויר</string>
     <string name="tile_style">סגנון אריחים</string>
-    <string name="tile_color">אייקונים</string>
-    <string name="tile_mono">מונוכרום</string>
+    <string name="tile_round">עגולים</string>
     <string name="tile_banner">באנרים</string>
     <string name="media_access">«מתנגן עכשיו» בדשבורד</string>
     <string name="allowed">מאושר</string>
@@ -66,4 +65,6 @@
     <string name="camera_hidden">מוסתרת</string>
     <string name="camera_connecting">מתחבר…</string>
     <string name="camera_offline">אין אות</string>
+    <string name="all_cameras">כל המצלמות</string>
+    <string name="cameras_count">%1$d מצלמות</string>
 </resources>

@@ -149,6 +149,13 @@ private fun SettingsScreen() {
     }
 
     LifecycleResumeEffect(Unit) {
+        camEnabled = cams.enabled
+        camHost = cams.host
+        camUser = cams.user
+        camPass = cams.pass
+        camFound = cams.found
+        camHidden = cams.hidden
+        camPrimary = cams.primary
         homeKey = HomeKeyService.isEnabled(context)
         mediaAccess = context.getSystemService(NotificationManager::class.java)
             .isNotificationListenerAccessGranted(ComponentName(context, MediaListener::class.java))
@@ -207,8 +214,7 @@ private fun SettingsScreen() {
                         stringResource(R.string.tile_style),
                         value = stringResource(
                             when (tileStyle) {
-                                TileStyle.Color -> R.string.tile_color
-                                TileStyle.Mono -> R.string.tile_mono
+                                TileStyle.Round -> R.string.tile_round
                                 TileStyle.Banner -> R.string.tile_banner
                             }
                         ),

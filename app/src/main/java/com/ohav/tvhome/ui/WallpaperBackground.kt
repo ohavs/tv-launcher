@@ -96,7 +96,7 @@ private suspend fun decode(context: Context, file: String): ImageBitmap? = withC
         while (bounds.outWidth / (sample * 2) >= screenW) sample *= 2
         val opts = BitmapFactory.Options().apply {
             inSampleSize = sample
-            inPreferredConfig = Bitmap.Config.ARGB_8888
+            inPreferredConfig = Bitmap.Config.HARDWARE
         }
         context.assets.open("wallpapers/$file").use { BitmapFactory.decodeStream(it, null, opts) }?.asImageBitmap()
     }.getOrNull()

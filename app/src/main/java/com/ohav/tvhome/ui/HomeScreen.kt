@@ -87,6 +87,7 @@ private class KeepInView(private val marginPx: Float) : BringIntoViewSpec {
 }
 
 private val EaseOut = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)
+private val WidgetHeight = 90.dp
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -112,10 +113,12 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
     val enter = remember { Animatable(0f) }
 
     val topIds = listOf("top:all", "top:settings")
+    val cams = home.camera
+    val dashCams = cams?.channels?.take(2).orEmpty()
     val widgetIds = buildList {
+        dashCams.indices.forEach { add("w:cam$it") }
+        if (dashCams.size > 1) add("w:allcams")
         if (track != null) { add("w:now"); add("w:pp") }
-        if (home.smartHome != null) add("w:home")
-        if (home.camera != null) add("w:cam")
     }
     fun ids(s: Section): List<String> = when (s) {
         Section.Top -> topIds
@@ -190,7 +193,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                 }
         ) {
             val sidePad = 48.dp
-            val tileW = if (style == TileStyle.Banner) 128.dp else 100.dp
+            val tileW = if (style == TileStyle.Banner) 128.dp else 96.dp
             val tileH = tileHeight(style, tileW)
             val gap = 18.dp
             val keep = remember(density) { KeepInView(with(density) { 120.dp.toPx() }) }
@@ -228,36 +231,46 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
             )
 
             Column(Modifier.fillMaxSize().padding(top = 30.dp)) {
-                Box(Modifier.fillMaxWidth().height(160.dp).padding(horizontal = sidePad)) {
-                    ClockBlock(home.weather, cityOf(home.prefs.cityId), Modifier.align(Alignment.TopStart).stagger(0))
-                    Row(Modifier.align(Alignment.TopEnd).stagger(0), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Box(Modifier.fillMaxWidth().padding(horizontal = sidePad)) {
+                    ClockBlock(home.weather, cityOf(home.prefs.cityId), Modifier.align(Alignment.CenterStart).stagger(0))
+                    Row(Modifier.align(Alignment.CenterEnd).stagger(0), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                         CircleButton(Glyph.Apps, req("top:all"), { onFocused(Section.Top, 0) }, { showAll = true })
                         CircleButton(Glyph.Settings, req("top:settings"), { onFocused(Section.Top, 1) }, { openSettings() })
                     }
+                }
+
+                // Dashboard: cameras on the start side, whatever is playing on the end side.
+                if (widgetIds.isNotEmpty()) {
                     Row(
-                        Modifier.align(Alignment.BottomEnd).stagger(1),
+                        Modifier.fillMaxWidth().padding(start = sidePad, end = sidePad, top = 14.dp).height(WidgetHeight).stagger(1),
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         var i = 0
+                        if (cams != null) {
+                            dashCams.forEachIndexed { slot, channel ->
+                                val iCam = i++
+                                CameraCard(
+                                    cams, channel, slot, active = !showAll, req("w:cam$slot"), { onFocused(Section.Widgets, iCam) },
+                                    { home.openCamera(channel, it) }, WidgetHeight,
+                                )
+                            }
+                            if (dashCams.size > 1) {
+                                val iAll = i++
+                                AllCamerasCard(cams.channels.size, req("w:allcams"), { onFocused(Section.Widgets, iAll) }, home::openCameraGrid, WidgetHeight)
+                            }
+                        }
+                        Spacer(Modifier.weight(1f))
                         if (track != null) {
                             val iNow = i++
-                            val iPp = i++
-                            NowPlayingCard(track, req("w:now"), { onFocused(Section.Widgets, iNow) }, home::openNowPlaying, 80.dp)
+                            val iPp = i
+                            NowPlayingCard(track, req("w:now"), { onFocused(Section.Widgets, iNow) }, home::openNowPlaying, WidgetHeight)
                             PlayPauseButton(track.playing, req("w:pp"), { onFocused(Section.Widgets, iPp) }, home.nowPlaying::playPause)
-                        }
-                        if (home.smartHome != null) {
-                            val iHome = i++
-                            SmartHomeCard(req("w:home"), { onFocused(Section.Widgets, iHome) }, home::openSmartHome, 80.dp)
-                        }
-                        home.camera?.let { cam ->
-                            val iCam = i
-                            CameraCard(cam, active = !showAll, req("w:cam"), { onFocused(Section.Widgets, iCam) }, home::openCamera, 80.dp)
                         }
                     }
                 }
 
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(if (widgetIds.isEmpty()) 60.dp else 4.dp))
                 CompositionLocalProvider(LocalBringIntoViewSpec provides keep) {
                     Box(Modifier.fillMaxWidth().stagger(2).horizontalScroll(rememberScrollState())) {
                         Box(

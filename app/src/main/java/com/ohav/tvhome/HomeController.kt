@@ -1,6 +1,7 @@
 package com.ohav.tvhome
 
 import com.ohav.tvhome.camera.CameraActivity
+import com.ohav.tvhome.camera.CameraGridActivity
 import com.ohav.tvhome.data.CameraPrefs
 import android.app.ActivityOptions
 import android.content.ComponentName
@@ -102,9 +103,14 @@ class HomeController(private val activity: ComponentActivity) {
         apps.firstOrNull { it.packageName == pkg }?.let { launch(it, from) }
     }
 
-    fun openCamera(from: Rect) {
+    fun openCamera(channel: Int, from: Rect) {
         val config = camera ?: return
-        start(CameraActivity.intent(activity, config), from)
+        start(CameraActivity.intent(activity, config, channel), from)
+    }
+
+    fun openCameraGrid(from: Rect) {
+        val config = camera ?: return
+        start(CameraGridActivity.intent(activity, config), from)
     }
 
     fun hide(app: AppEntry) {

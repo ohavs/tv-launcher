@@ -1,5 +1,8 @@
 package com.ohav.tvhome.ui
 
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -32,7 +35,6 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.ContentScale
@@ -48,7 +50,12 @@ import androidx.compose.ui.unit.sp
 import com.ohav.tvhome.data.AppEntry
 import com.ohav.tvhome.data.TileStyle
 
-fun tileHeight(style: TileStyle, width: Dp): Dp = if (style == TileStyle.Banner) width * 9 / 16 else width * 3 / 4
+/** Banner: 16:9 card. Round: a circle a bit narrower than the slot, leaving room for the glow. */
+fun tileHeight(style: TileStyle, width: Dp): Dp = if (style == TileStyle.Banner) width * 9 / 16 else width * 0.74f
+
+fun tileWidth(style: TileStyle, width: Dp): Dp = if (style == TileStyle.Banner) width else width * 0.74f
+
+fun tileShape(style: TileStyle): Shape = if (style == TileStyle.Banner) TileShape else CircleShape
 
 @Composable
 fun AppTile(
@@ -72,14 +79,16 @@ fun AppTile(
     )
 
     Column(modifier.width(width), horizontalAlignment = Alignment.CenterHorizontally) {
+        val round = style == TileStyle.Round
         ParallaxSurface(
             focused = focused,
             pressed = pressed,
             jiggle = moving,
-            shape = TileShape,
-            focusScale = 1.13f,
+            shape = tileShape(style),
+            focusScale = if (round) 1.16f else 1.13f,
             modifier = Modifier
-                .size(width, tileHeight(style, width))
+                .then(if (round) Modifier.brandGlow(app.brand, reveal) else Modifier)
+                .size(tileWidth(style, width), tileHeight(style, width))
                 .onGloballyPositioned { bounds = it.boundsInRoot() }
                 .focusRequester(focusRequester)
                 .onFocusChanged {
@@ -102,8 +111,9 @@ fun AppTile(
                 .fillMaxWidth()
                 .padding(top = 12.dp)
                 .graphicsLayer {
-                    alpha = if (moving) 0f else reveal
-                    translationY = (1f - reveal) * -6.dp.toPx()
+                    // Round tiles always name the app; banners only on focus (the banner already says it).
+                    alpha = if (moving) 0f else if (round) 0.62f + 0.38f * reveal else reveal
+                    translationY = if (round) reveal * 4.dp.toPx() else (1f - reveal) * -6.dp.toPx()
                 },
             color = Color.White,
             fontSize = 13.sp,
@@ -116,9 +126,19 @@ fun AppTile(
     }
 }
 
+/** Soft halo in the app's colour behind a round tile, fading in with focus. */
+private fun Modifier.brandGlow(color: Color, amount: Float) = drawBehind {
+    if (amount <= 0.01f) return@drawBehind
+    val r = size.minDimension * 0.86f
+    drawCircle(
+        Brush.radialGradient(listOf(color.copy(alpha = 0.55f * amount), Color.Transparent), center, r),
+        radius = r,
+    )
+}
+
 /**
- * Tile artwork. Icon styles: the app's logo on frosted glass that fills with the app's own
- * icon colour when focused. Banner style: the classic Android TV banner.
+ * Tile artwork. Round style: the app's logo on a frosted-glass disc that fills with the app's own
+ * colour when focused. Banner style: the classic Android TV banner.
  */
 @Composable
 fun TileArt(app: AppEntry, style: TileStyle, reveal: Float = 0f) {
@@ -127,13 +147,12 @@ fun TileArt(app: AppEntry, style: TileStyle, reveal: Float = 0f) {
         Image(banner!!, contentDescription = app.label, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         return
     }
-    val mono = style == TileStyle.Mono && app.mono != null
-    val fill = if (mono) Color(0xFF454B57) else app.brand
+    val fill = app.brand
     Box(
         Modifier
             .fillMaxSize()
             .background(GlassFill)
-            .border(1.dp, GlassEdge, TileShape),
+            .border(1.dp, GlassEdge, tileShape(style)),
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -142,19 +161,18 @@ fun TileArt(app: AppEntry, style: TileStyle, reveal: Float = 0f) {
                 .graphicsLayer { alpha = reveal }
                 .background(Brush.linearGradient(listOf(lerp(fill, Color.White, 0.10f), lerp(fill, Color.Black, 0.16f))))
         )
-        val glyph = if (mono) app.mono else app.glyph
+        val glyph = app.glyph
         when {
             glyph != null -> Image(
                 glyph,
                 contentDescription = app.label,
-                colorFilter = if (mono) ColorFilter.tint(Color.White) else null,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxWidth(0.6f).fillMaxHeight(0.46f),
+                modifier = Modifier.fillMaxWidth(0.64f).fillMaxHeight(0.42f),
             )
             app.icon != null -> Image(
                 app.icon,
                 contentDescription = app.label,
-                modifier = Modifier.fillMaxHeight(0.54f).aspectRatio(1f).clip(RoundedCornerShape(24)),
+                modifier = Modifier.fillMaxHeight(0.62f).aspectRatio(1f).clip(CircleShape),
             )
         }
     }

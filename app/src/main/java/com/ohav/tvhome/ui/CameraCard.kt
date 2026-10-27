@@ -1,6 +1,5 @@
 package com.ohav.tvhome.ui
 
-import android.graphics.Matrix
 import android.graphics.SurfaceTexture
 import android.os.Handler
 import android.os.Looper
@@ -53,7 +52,6 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import kotlin.math.max
 
 /** Holds the TextureView's SurfaceTexture; released only once the camera process has let go of it. */
 private class TextureSlot {
@@ -63,12 +61,15 @@ private class TextureSlot {
 }
 
 /**
- * Live view of the first camera channel. Decoding happens in the `:camera` process; it starts a moment after
+ * Live view of one camera channel. Decoding happens in the `:camera` process; it starts a moment after
  * the home screen shows (so it never slows the launch) and stops whenever the launcher is not visible.
+ * Each card on screen uses its own [slot] in the camera service.
  */
 @Composable
 fun CameraCard(
     config: CameraConfig,
+    channel: Int,
+    slot: Int,
     active: Boolean,
     requester: FocusRequester,
     onFocused: () -> Unit,
@@ -76,12 +77,9 @@ fun CameraCard(
     height: Dp,
 ) {
     val context = LocalContext.current
-    val slot = remember { TextureSlot() }
+    val tex = remember { TextureSlot() }
     var state by remember { mutableIntStateOf(CAM_CONNECTING) }
-    var videoW by remember { mutableIntStateOf(0) }
-    var videoH by remember { mutableIntStateOf(0) }
     var started by remember { mutableStateOf(false) }
-    val channel = config.channels.first()
     val url = config.url(channel, sub = true)
 
     LifecycleStartEffect(Unit) {
@@ -96,33 +94,32 @@ fun CameraCard(
                 main.post { state = s }
             }
 
-            override fun onVideoSize(width: Int, height: Int) {
-                main.post { videoW = width; videoH = height }
-            }
+            // The card is 16:9 and DVR frames are meant to be stretched to 16:9 (see displayAspect).
+            override fun onVideoSize(width: Int, height: Int) = Unit
         }
     }
 
-    LaunchedEffect(slot.texture, started && active, url) {
-        val texture = slot.texture ?: return@LaunchedEffect
+    LaunchedEffect(tex.texture, started && active, url) {
+        val texture = tex.texture ?: return@LaunchedEffect
         if (!started || !active) return@LaunchedEffect
         state = CAM_CONNECTING
-        delay(1200)
+        delay(1200L + slot * 400L)
         val link = runCatching { CameraLink.connect(context.applicationContext) { state = CAM_ERROR } }.getOrElse {
             state = CAM_ERROR
             return@LaunchedEffect
         }
         val surface = Surface(texture)
-        slot.inUse = true
+        tex.inUse = true
         try {
-            withContext(Dispatchers.IO) { link.player.play(surface, url, listener) }
+            withContext(Dispatchers.IO) { link.player.play(slot, surface, url, listener) }
             awaitCancellation()
         } finally {
-            withContext(NonCancellable + Dispatchers.IO) { runCatching { link.player.stop() } }
+            withContext(NonCancellable + Dispatchers.IO) { runCatching { link.player.stop(slot) } }
             link.close()
             surface.release()
-            slot.inUse = false
-            slot.orphan?.release()
-            slot.orphan = null
+            tex.inUse = false
+            tex.orphan?.release()
+            tex.orphan = null
         }
     }
 
@@ -134,22 +131,21 @@ fun CameraCard(
                     isOpaque = false
                     surfaceTextureListener = object : TextureView.SurfaceTextureListener {
                         override fun onSurfaceTextureAvailable(st: SurfaceTexture, w: Int, h: Int) {
-                            slot.texture = st
+                            tex.texture = st
                         }
 
                         override fun onSurfaceTextureSizeChanged(st: SurfaceTexture, w: Int, h: Int) = Unit
                         override fun onSurfaceTextureUpdated(st: SurfaceTexture) = Unit
 
                         override fun onSurfaceTextureDestroyed(st: SurfaceTexture): Boolean {
-                            slot.texture = null
-                            if (!slot.inUse) return true
-                            slot.orphan = st
+                            tex.texture = null
+                            if (!tex.inUse) return true
+                            tex.orphan = st
                             return false
                         }
                     }
                 }
             },
-            update = { it.cropTo(videoW, videoH) },
             modifier = Modifier.fillMaxSize().graphicsLayer { alpha = shown },
         )
         if (state != CAM_PLAYING) {
@@ -177,13 +173,4 @@ fun CameraCard(
             }
         }
     }
-}
-
-/** Center-crop the video into the view (TextureView stretches by default). */
-private fun TextureView.cropTo(videoW: Int, videoH: Int) {
-    val vw = width.toFloat()
-    val vh = height.toFloat()
-    if (vw == 0f || vh == 0f || videoW == 0 || videoH == 0) return
-    val scale = max(vw / videoW, vh / videoH)
-    setTransform(Matrix().apply { setScale(videoW * scale / vw, videoH * scale / vh, vw / 2, vh / 2) })
 }
