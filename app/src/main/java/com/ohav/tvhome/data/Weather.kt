@@ -34,6 +34,7 @@ val CITIES = listOf(
     City("mod", "מודיעין", "Modi'in", 31.8981, 35.0104),
     City("ask", "אשקלון", "Ashkelon", 31.6688, 34.5743),
     City("tib", "טבריה", "Tiberias", 32.7922, 35.5312),
+    City("bsn", "בית שאן", "Beit She'an", 32.4973, 35.4986),
     City("eil", "אילת", "Eilat", 29.5577, 34.9519),
 )
 
