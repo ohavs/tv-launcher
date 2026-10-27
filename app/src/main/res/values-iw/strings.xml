@@ -67,4 +67,8 @@
     <string name="camera_offline">אין אות</string>
     <string name="all_cameras">כל המצלמות</string>
     <string name="cameras_count">%1$d מצלמות</string>
+    <string name="layout">פריסה</string>
+    <string name="layout_classic">קלאסית</string>
+    <string name="layout_cinema">קולנועית</string>
+    <string name="continue_item">המשך: %1$s</string>
 </resources>

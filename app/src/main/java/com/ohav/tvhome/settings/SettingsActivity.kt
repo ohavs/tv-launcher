@@ -43,6 +43,7 @@ import com.ohav.tvhome.HomeKeyService
 import com.ohav.tvhome.ui.WALLPAPERS
 import com.ohav.tvhome.data.AppRepository
 import com.ohav.tvhome.data.CameraPrefs
+import com.ohav.tvhome.data.HomeLayout
 import com.ohav.tvhome.data.RtspProbe
 import com.ohav.tvhome.data.ScanResult
 import com.ohav.tvhome.data.CITIES
@@ -85,6 +86,7 @@ private fun SettingsScreen() {
     var update by remember { mutableStateOf<UpdateUi>(UpdateUi.Idle) }
     var showCredits by remember { mutableStateOf(false) }
     var tileStyle by remember { mutableStateOf(prefs.tileStyle) }
+    var layout by remember { mutableStateOf(prefs.layout) }
     var cityId by remember { mutableStateOf(prefs.cityId) }
     var showCities by remember { mutableStateOf(false) }
     var mediaAccess by remember { mutableStateOf(false) }
@@ -210,6 +212,13 @@ private fun SettingsScreen() {
                     }
 
                     SectionTitle(stringResource(R.string.appearance))
+                    MenuRow(
+                        stringResource(R.string.layout),
+                        value = stringResource(if (layout == HomeLayout.Cinema) R.string.layout_cinema else R.string.layout_classic),
+                    ) {
+                        layout = HomeLayout.entries[(layout.ordinal + 1) % HomeLayout.entries.size]
+                        prefs.layout = layout
+                    }
                     MenuRow(
                         stringResource(R.string.tile_style),
                         value = stringResource(

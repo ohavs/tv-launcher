@@ -35,6 +35,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -64,6 +65,7 @@ import androidx.compose.ui.zIndex
 import com.ohav.tvhome.HomeController
 import com.ohav.tvhome.R
 import com.ohav.tvhome.data.AppEntry
+import com.ohav.tvhome.data.HomeLayout
 import com.ohav.tvhome.data.ShelfItem
 import com.ohav.tvhome.data.TileStyle
 import com.ohav.tvhome.data.cityOf
@@ -88,6 +90,8 @@ private class KeepInView(private val marginPx: Float) : BringIntoViewSpec {
 
 private val EaseOut = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)
 private val WidgetHeight = 90.dp
+private val ClassicOrder = listOf(Section.Top, Section.Widgets, Section.Apps, Section.Content)
+private val CinemaOrder = listOf(Section.Top, Section.Widgets, Section.Content, Section.Apps)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -95,6 +99,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
     val apps = home.apps
     val style = home.tileStyle
     val track = home.nowPlaying.track
+    val cinema = home.layout == HomeLayout.Cinema
     val motion = remember { FocusMotion() }
     val density = LocalDensity.current
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -103,6 +108,8 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
 
     var section by remember { mutableStateOf(Section.Apps) }
     val lastIndex = remember { IntArray(Section.entries.size) }
+    /** Bumped on every focus move, for what reads [lastIndex] while composing (cinema hero and carousel). */
+    var focusMoves by remember { mutableIntStateOf(0) }
     var shelfApp by remember { mutableStateOf<AppEntry?>(null) }
     var shelfItems by remember { mutableStateOf<List<ShelfItem>>(emptyList()) }
     var menuApp by remember { mutableStateOf<AppEntry?>(null) }
@@ -134,6 +141,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
     fun onFocused(s: Section, i: Int) {
         section = s
         lastIndex[s.ordinal] = i
+        focusMoves++
     }
     fun stepTo(dir: Dir): Boolean = when (dir) {
         Dir.Left, Dir.Right -> {
@@ -141,8 +149,13 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
             val i = lastIndex[section.ordinal] + step
             i in ids(section).indices && focus(section, i)
         }
-        Dir.Up -> Section.entries.take(section.ordinal).reversed().firstOrNull { ids(it).isNotEmpty() }?.let { focus(it) } ?: false
-        Dir.Down -> Section.entries.drop(section.ordinal + 1).firstOrNull { ids(it).isNotEmpty() }?.let { focus(it) } ?: false
+        Dir.Up, Dir.Down -> {
+            // Cinema puts the app's content above the carousel; classic puts it below the apps.
+            val order = if (cinema) CinemaOrder else ClassicOrder
+            val at = order.indexOf(section)
+            val next = if (dir == Dir.Up) order.take(at).reversed() else order.drop(at + 1)
+            next.firstOrNull { ids(it).isNotEmpty() }?.let { focus(it) } ?: false
+        }
     }
 
     CompositionLocalProvider(LocalFocusMotion provides motion) {
@@ -205,6 +218,17 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                 translationY = (1f - p) * 22.dp.toPx()
             }
 
+            focusMoves
+            val heroItem = if (section == Section.Content) shelfItems.getOrNull(lastIndex[Section.Content.ordinal])
+                else shelfItems.firstOrNull { it.imageUri != null } ?: shelfItems.firstOrNull()
+            if (cinema) {
+                CinemaBackdrop(shelfApp, heroItem, Modifier.graphicsLayer {
+                    val s = 1.06f - 0.06f * EaseOut.transform(enter.value)
+                    scaleX = s
+                    scaleY = s
+                })
+                CinemaScrims(isRtl)
+            } else {
             WallpaperBackground(Modifier.graphicsLayer {
                 val s = 1.06f - 0.06f * EaseOut.transform(enter.value)
                 scaleX = s
@@ -229,6 +253,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                     )
                 )
             )
+            }
 
             Column(Modifier.fillMaxSize().padding(top = 30.dp)) {
                 Box(Modifier.fillMaxWidth().padding(horizontal = sidePad)) {
@@ -270,6 +295,38 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                     }
                 }
 
+                if (cinema) {
+                    Spacer(Modifier.weight(1f))
+                    CinemaHero(shelfApp, heroItem, sidePad, Modifier.stagger(2))
+                    CompositionLocalProvider(LocalBringIntoViewSpec provides keep) {
+                        ContentRow(
+                            state = ShelfState(shelfApp, shelfItems),
+                            sidePad = sidePad,
+                            cardHeight = 62.dp,
+                            req = ::req,
+                            onFocused = { onFocused(Section.Content, it) },
+                            onOpen = home::open,
+                            modifier = Modifier.stagger(2),
+                            showTitle = false,
+                            captions = false,
+                        )
+                    }
+                    AppCarousel(
+                        apps = apps,
+                        style = style,
+                        center = lastIndex[Section.Apps.ordinal].coerceIn(0, (apps.size - 1).coerceAtLeast(0)),
+                        movingId = movingId,
+                        req = ::req,
+                        onFocused = { i, app ->
+                            onFocused(Section.Apps, i)
+                            if (shelfApp?.id != app.id) lastIndex[Section.Content.ordinal] = 0
+                            shelfApp = app
+                        },
+                        onClick = home::launch,
+                        onLongPress = { menuApp = it },
+                        modifier = Modifier.stagger(3).padding(bottom = 16.dp),
+                    )
+                } else {
                 Spacer(Modifier.height(if (widgetIds.isEmpty()) 60.dp else 4.dp))
                 CompositionLocalProvider(LocalBringIntoViewSpec provides keep) {
                     Box(Modifier.fillMaxWidth().stagger(2).horizontalScroll(rememberScrollState())) {
@@ -313,6 +370,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                         onOpen = home::open,
                         modifier = Modifier.stagger(3),
                     )
+                }
                 }
             }
 

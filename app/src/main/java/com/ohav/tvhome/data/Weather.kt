@@ -11,6 +11,9 @@ import kotlin.math.roundToInt
 
 enum class TileStyle { Round, Banner }
 
+/** Classic: app row + content row. Cinema: full-screen preview of the focused app over a centred carousel. */
+enum class HomeLayout { Classic, Cinema }
+
 data class City(val id: String, val he: String, val en: String, val lat: Double, val lon: Double) {
     val name: String get() = if (Locale.getDefault().language in setOf("iw", "he")) he else en
 }

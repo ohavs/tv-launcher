@@ -181,7 +181,7 @@ fun CircleButton(glyph: Glyph, requester: FocusRequester, onFocused: () -> Unit,
 fun NowPlayingCard(track: Track, requester: FocusRequester, onFocused: () -> Unit, onClick: (Rect) -> Unit, height: Dp) {
     val context = LocalContext.current
     val artPx = with(LocalDensity.current) { (height * 1.2f).roundToPx() }
-    val art by produceState(track.art ?: track.artUri?.let { ImageLoader.cached(it) }, track.art, track.artUri) {
+    val art by produceState(track.art ?: track.artUri?.let { ImageLoader.cached(it, artPx) }, track.art, track.artUri) {
         if (track.art == null) track.artUri?.let { value = ImageLoader.load(context, it, artPx) }
     }
     GlassButton(requester, onFocused, onClick, Modifier.size(height * 3.1f, height)) { f ->

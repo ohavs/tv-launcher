@@ -67,4 +67,8 @@
     <string name="camera_offline">No signal</string>
     <string name="all_cameras">All cameras</string>
     <string name="cameras_count">%1$d cameras</string>
+    <string name="layout">Layout</string>
+    <string name="layout_classic">Classic</string>
+    <string name="layout_cinema">Cinematic</string>
+    <string name="continue_item">Continue: %1$s</string>
 </resources>

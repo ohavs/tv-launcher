@@ -21,10 +21,12 @@ object ImageLoader {
     }
     private val gate = Semaphore(4)
 
-    fun cached(uri: String): ImageBitmap? = cache.get(uri)
+    private fun key(uri: String, maxWidth: Int) = "$maxWidth|$uri"
+
+    fun cached(uri: String, maxWidth: Int): ImageBitmap? = cache.get(key(uri, maxWidth))
 
     suspend fun load(context: Context, uri: String, maxWidth: Int): ImageBitmap? {
-        cache.get(uri)?.let { return it }
+        cache.get(key(uri, maxWidth))?.let { return it }
         return gate.withPermit {
             withContext(Dispatchers.IO) {
                 runCatching {
@@ -38,7 +40,7 @@ object ImageLoader {
                         inPreferredConfig = Bitmap.Config.HARDWARE
                     }
                     BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)?.asImageBitmap()
-                }.getOrNull()?.also { cache.put(uri, it) }
+                }.getOrNull()?.also { cache.put(key(uri, maxWidth), it) }
             }
         }
     }

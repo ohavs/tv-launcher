@@ -40,6 +40,8 @@ class HomeController(private val activity: ComponentActivity) {
         private set
     var tileStyle by mutableStateOf(prefs.tileStyle)
         private set
+    var layout by mutableStateOf(prefs.layout)
+        private set
     var weather by mutableStateOf(prefs.weather)
         private set
     /** DVR cameras for the dashboard, when set up. */
@@ -66,6 +68,7 @@ class HomeController(private val activity: ComponentActivity) {
         shelf.invalidate()
         resumeSignal++
         tileStyle = prefs.tileStyle
+        layout = prefs.layout
         camera = cameraPrefs.config()
         if (all.isNotEmpty()) apps = prefs.arrange(all)
         refreshWeather()

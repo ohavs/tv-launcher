@@ -21,6 +21,10 @@ class Prefs(context: Context) {
         get() = runCatching { TileStyle.valueOf(sp.getString("tileStyle", null)!!) }.getOrDefault(TileStyle.Banner)
         set(v) = sp.edit().putString("tileStyle", v.name).apply()
 
+    var layout: HomeLayout
+        get() = runCatching { HomeLayout.valueOf(sp.getString("layout", null)!!) }.getOrDefault(HomeLayout.Classic)
+        set(v) = sp.edit().putString("layout", v.name).apply()
+
     var cityId: String
         get() = sp.getString("city", CITIES.first().id)!!
         set(v) = sp.edit().putString("city", v).apply()

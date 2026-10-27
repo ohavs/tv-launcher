@@ -74,6 +74,8 @@ fun ContentRow(
     onFocused: (Int) -> Unit,
     onOpen: (ShelfItem, Rect) -> Unit,
     modifier: Modifier = Modifier,
+    showTitle: Boolean = true,
+    captions: Boolean = true,
 ) {
     AnimatedContent(
         targetState = state,
@@ -88,7 +90,7 @@ fun ContentRow(
         Column {
             val resuming = s.items.any { it.progress != null }
             val label = s.app?.label.orEmpty()
-            Text(
+            if (showTitle) Text(
                 if (resuming) stringResource(R.string.continue_in, label) else label,
                 modifier = Modifier.padding(horizontal = sidePad),
                 color = Color.White.copy(alpha = 0.88f),
@@ -105,7 +107,7 @@ fun ContentRow(
                 verticalAlignment = Alignment.Top,
             ) {
                 s.items.forEachIndexed { i, item ->
-                    ContentCard(item, cardHeight, s.app?.accent ?: Color.DarkGray, req("c:" + item.key), { onFocused(i) }, onOpen)
+                    ContentCard(item, cardHeight, s.app?.accent ?: Color.DarkGray, captions, req("c:" + item.key), { onFocused(i) }, onOpen)
                 }
             }
         }
@@ -117,6 +119,7 @@ private fun ContentCard(
     item: ShelfItem,
     height: Dp,
     accent: Color,
+    captions: Boolean,
     requester: FocusRequester,
     onFocused: () -> Unit,
     onOpen: (ShelfItem, Rect) -> Unit,
@@ -127,7 +130,7 @@ private fun ContentCard(
     val width = height * item.aspect.coerceIn(0.6f, 1.9f)
     val context = LocalContext.current
     val maxPx = with(LocalDensity.current) { (width * 1.2f).roundToPx() }
-    val image by produceState(item.imageUri?.let { ImageLoader.cached(it) }, item.imageUri) {
+    val image by produceState(item.imageUri?.let { ImageLoader.cached(it, maxPx) }, item.imageUri) {
         item.imageUri?.let { value = ImageLoader.load(context, it, maxPx) }
     }
     val f by animateFloatAsState(if (focused) 1f else 0f, spring(1f, Spring.StiffnessMediumLow), label = "caption")
@@ -171,7 +174,7 @@ private fun ContentCard(
                 Box(Modifier.fillMaxWidth(p).height(3.dp).background(Color.White))
             }
         }
-        Text(
+        if (captions) Text(
             item.title,
             modifier = Modifier.padding(top = 8.dp),
             color = Color.White.copy(alpha = 0.7f + 0.3f * f),
@@ -181,7 +184,7 @@ private fun ContentCard(
             overflow = TextOverflow.Ellipsis,
             style = TextStyle(shadow = LegibleShadow),
         )
-        item.subtitle?.let {
+        if (captions) item.subtitle?.let {
             Text(
                 it,
                 color = Color.White.copy(alpha = 0.45f + 0.2f * f),
