@@ -1,18 +1,27 @@
 # Wallpaper credits
 
 Photos from Wikimedia Commons Featured Pictures, used under their free licences.
+The app shows them cropped and split into a background and a foreground layer.
 
-- `01.jpg` 1 lake louise pano 2019: Chensiyuan, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3A1_lake_louise_pano_2019.jpg
-- `02.jpg` Cirrus front over Austnesfjorden, Austvågøya, Lofoten, Norway, 2015 April: Ximonic (Simo Räsänen), CC BY-SA 3.0. https://commons.wikimedia.org/wiki/File%3ACirrus_front_over_Austnesfjorden%2C_Austv%C3%A5g%C3%B8ya%2C_Lofoten%2C_Norway%2C_2015_April.jpg
-- `03.jpg` Área de Proteção Ambiental da Baleia Franca Claudio Seelig (01): Ctseelig, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3A%C3%81rea_de_Prote%C3%A7%C3%A3o_Ambiental_da_Baleia_Franca_Claudio_Seelig_%2801%29.jpg
-- `04.jpg` Aurora amazônica no Lago do Cuniã: RodrigoErse, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3AAurora_amaz%C3%B4nica_no_Lago_do_Cuni%C3%A3.jpg
-- `05.jpg` 2015 Spullersee im Lechquellengebirge: Feel free to use my photos, but please m, CC BY-SA 3.0 at. https://commons.wikimedia.org/wiki/File%3A2015_Spullersee_im_Lechquellengebirge.jpg
-- `06.jpg` 2014 Paczków, staw: Jacek Halicki, CC BY-SA 3.0. https://commons.wikimedia.org/wiki/File%3A2014_Paczk%C3%B3w%2C_staw.jpg
-- `07.jpg` Aerial image of Stromboli (view from the northeast): Carsten Steger, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3AAerial_image_of_Stromboli_%28view_from_the_northeast%29.jpg
-- `08.jpg` Flatirons Sunrise: Tyler Cipriani, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3AFlatirons_Sunrise.jpg
-- `09.jpg` Manneporte en soir: Jörg Braukmann, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3AManneporte_en_soir.jpg
-- `10.jpg` 2016-11-13 01 Kjeungskjær Lighthouse, Sør-Trøndelag, Norway: Gordon Leggett, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3A2016-11-13_01_Kjeungskj%C3%A6r_Lighthouse%2C_S%C3%B8r-Tr%C3%B8ndelag%2C_Norway.jpg
-- `11.jpg` Eilean Donan Castle, Scotland - Jan 2011: Diliff, CC BY-SA 3.0. https://commons.wikimedia.org/wiki/File%3AEilean_Donan_Castle%2C_Scotland_-_Jan_2011.jpg
-- `12.jpg` Breathtaking beauty of Dzukou Valley in Manipur-Nagaland border (edit): Original:  Samudra Bikash Hazarika
+- `01` Mount Shasta at sunset: Frank Schulenburg, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3ANorth_face_of_Mount_Shasta_at_sunset-2175.jpg
+- `02` Hirtshals Lighthouse: Jörg Braukmann, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3AHirtshals_Fyr_2015.jpg
+- `03` Pic du Midi d'Ossau: Myrabella, CC BY-SA 3.0. https://commons.wikimedia.org/wiki/File%3AGentau_Pic_du_Midi_Ossau.jpg
+- `04` Ingush tower, Armkhi: Vyacheslav Argenberg, CC BY 4.0. https://commons.wikimedia.org/wiki/File%3AIngushetia%2C_Russia%2C_Armkhi%2C_Ingush_tower.jpg
+- `05` Watzmann: Jörg Braukmann, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3AWatzmann_%28Westseite%29.jpg
+- `06` Flatirons sunrise: Tyler Cipriani, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3AFlatirons_Sunrise.jpg
+- `07` Westerhever Lighthouse: Richard Bartz, CC BY-SA 3.0. https://commons.wikimedia.org/wiki/File%3AWesterhever_Nordostblick.jpg
+- `08` Lake Mystery, New Zealand: Michal Klajban, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3ALake_Mystery%2C_Canterbury%2C_New_Zealand_05.jpg
+- `09` Teide: Flocci Nivis, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3A20250708_Teide_03.jpg
+- `10` Sweet Bread Mountain: Donatas Dabravolskas, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3ASweet_Bread_Mountain.jpg
+- `11` Passo Pordoi: Bops92, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3APasso_Pordoi-bops_01.jpg
+- `12` Cap Leucate Lighthouse: H. Zell, CC BY-SA 3.0. https://commons.wikimedia.org/wiki/File%3ACap_Leucate_-_lighthouse_01.jpg
+- `13` Ararat and Khor Virap: Diego Delso, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3AMonasterio_Khor_Virap%2C_Armenia%2C_2016-10-01%2C_DD_25.jpg
+- `14` Ingush towers at sunset: Vyacheslav Argenberg, CC BY 4.0. https://commons.wikimedia.org/wiki/File%3ACaucasus%2C_Ingushetia%2C_%D0%98%D0%BD%D0%B3%D1%83%D1%88%D1%81%D0%BA%D0%B8%D0%B5_%D0%B1%D0%BE%D0%B5%D0%B2%D1%8B%D0%B5_%D0%B8_%D1%81%D0%BC%D0%BE%D1%82%D1%80%D0%BE%D0%B2%D1%8B%D0%B5_%D0%B1%D0%B0%D1%88%D0%BD%D0%B8_%D0%BD%D0%B0_%D0%B7%D0%B0%D0%BA%D0%B0%D1%82%D0%B5%2C_%D0%B3%D0%BE%D1%80%D1%8B_%D0%9A%D0%B0%D0%B2%D0%BA%D0%B0%D0%B7%D0%B0.jpg
+- `15` Watzmann above the fog: Jörg Braukmann, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3AWatzmann_mit_Sch%C3%B6nfeldspitze.jpg
+- `16` Teide from the north-east: Thomas Wolf, www.foto-tw.de, CC BY-SA 3.0 de. https://commons.wikimedia.org/wiki/File%3ATeide_von_Nordosten_%28Zuschnitt_1%29.jpg
+- `17` Matanuska-Susitna, Alaska: Ross Fowler from Sydney, Australia, CC BY 2.0. https://commons.wikimedia.org/wiki/File%3AMatanuska-Susitna_Borough%2C_Alaska_2.jpg
 
-Deri, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File%3ABreathtaking_beauty_of_Dzukou_Valley_in_Manipur-Nagaland_border_%28edit%29.jpg
+## Fonts
+
+Clock fonts (subset to digits), SIL Open Font License 1.1: Oswald (The Oswald Project Authors), Bebas Neue
+(Dharma Type), Anton (Vernon Adams), Big Shoulders Display (Patric King). https://fonts.google.com
