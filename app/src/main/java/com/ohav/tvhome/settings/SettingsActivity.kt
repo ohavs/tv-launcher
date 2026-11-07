@@ -225,7 +225,13 @@ private fun SettingsScreen() {
                     SectionTitle(stringResource(R.string.appearance))
                     MenuRow(
                         stringResource(R.string.layout),
-                        value = stringResource(if (layout == HomeLayout.Cinema) R.string.layout_cinema else R.string.layout_classic),
+                        value = stringResource(
+                            when (layout) {
+                                HomeLayout.Classic -> R.string.layout_classic
+                                HomeLayout.Clock -> R.string.layout_clock
+                                HomeLayout.Cinema -> R.string.layout_cinema
+                            }
+                        ),
                     ) {
                         layout = HomeLayout.entries[(layout.ordinal + 1) % HomeLayout.entries.size]
                         prefs.layout = layout

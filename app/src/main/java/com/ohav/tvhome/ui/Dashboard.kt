@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -66,25 +67,27 @@ import java.util.Locale
 
 /** Clock with the date and today's weather beside it — the calm, always-visible part of the dashboard. */
 @Composable
-fun ClockBlock(weather: WeatherNow?, city: City, modifier: Modifier = Modifier) {
+fun ClockBlock(
+    weather: WeatherNow?,
+    city: City,
+    modifier: Modifier = Modifier,
+    timeModifier: Modifier = Modifier,
+    infoModifier: Modifier = Modifier,
+) {
     val context = LocalContext.current
-    val now by produceState(Date()) {
-        while (true) {
-            value = Date()
-            delay((60 - Calendar.getInstance().get(Calendar.SECOND)) * 1000L)
-        }
-    }
+    val now by rememberNow()
     val time = DateFormat.getTimeFormat(context).format(now)
     val date = DateFormat.format(DateFormat.getBestDateTimePattern(Locale.getDefault(), "EEEEdMMMM"), now).toString()
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         Text(
             time,
+            modifier = timeModifier,
             color = Color.White,
             fontSize = 56.sp,
             fontWeight = FontWeight.Light,
             style = TextStyle(letterSpacing = (-1).sp, lineHeight = 60.sp),
         )
-        Column(Modifier.padding(start = 20.dp)) {
+        Column(Modifier.padding(start = 20.dp).then(infoModifier)) {
         Text(
             date,
             color = Color.White.copy(alpha = 0.92f),
@@ -110,7 +113,16 @@ fun ClockBlock(weather: WeatherNow?, city: City, modifier: Modifier = Modifier) 
     }
 }
 
-private fun skyName(sky: Sky) = when (sky) {
+/** The current time, updated on each minute boundary. */
+@Composable
+fun rememberNow(): State<Date> = produceState(Date()) {
+    while (true) {
+        value = Date()
+        delay((60 - Calendar.getInstance().get(Calendar.SECOND)) * 1000L)
+    }
+}
+
+internal fun skyName(sky: Sky) = when (sky) {
     Sky.Clear -> R.string.sky_clear
     Sky.Partly -> R.string.sky_partly
     Sky.Cloudy -> R.string.sky_cloudy

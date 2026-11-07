@@ -1,6 +1,18 @@
 package com.ohav.tvhome.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.focusable
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.LinearEasing
@@ -75,7 +87,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 
 /** Focus rows, top to bottom. Up/Down jumps between them and returns to the last item used. */
-private enum class Section { Top, Widgets, Apps, Content }
+private enum class Section { Top, Hero, Widgets, Apps, Content }
 
 /** Scrolls a row only as much as needed to keep the focused item [marginPx] away from the edges. */
 @OptIn(ExperimentalFoundationApi::class)
@@ -95,6 +107,36 @@ private val EaseOut = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)
 private val WidgetHeight = 90.dp
 private val ClassicOrder = listOf(Section.Top, Section.Widgets, Section.Apps, Section.Content)
 private val CinemaOrder = listOf(Section.Top, Section.Widgets, Section.Content, Section.Apps)
+private val ClockOrder = listOf(Section.Top, Section.Hero, Section.Widgets, Section.Apps, Section.Content)
+/** Clock layout: how far the photo moves while the page scrolls a whole screen (parallax). */
+private val Parallax = 120.dp
+
+private val ClassicScrim = Brush.verticalGradient(
+    0f to Color.Black.copy(alpha = 0.50f),
+    0.24f to Color.Black.copy(alpha = 0.12f),
+    0.40f to Color.Black.copy(alpha = 0.28f),
+    0.62f to Color.Black.copy(alpha = 0.80f),
+    1f to Color.Black.copy(alpha = 0.94f),
+)
+
+/**
+ * Scrim over the clock layout's tall photo layer (screen + [Parallax]). Stops are in screen heights from the
+ * layer's top: the clock page sees 0..1, the apps page (layer moved up by Parallax) sees p..1+p, where it
+ * matches [ClassicScrim].
+ */
+private fun clockScrim(screenH: Dp): Brush {
+    val p = Parallax / screenH
+    val total = 1f + p
+    fun at(y: Float) = y / total
+    return Brush.verticalGradient(
+        0f to Color.Black.copy(alpha = 0.30f),
+        at(p) to Color.Black.copy(alpha = 0.44f),
+        at(p + 0.24f) to Color.Black.copy(alpha = 0.14f),
+        at(p + 0.40f) to Color.Black.copy(alpha = 0.30f),
+        at(p + 0.62f) to Color.Black.copy(alpha = 0.80f),
+        1f to Color.Black.copy(alpha = 0.94f),
+    )
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -103,6 +145,10 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
     val style = home.tileStyle
     val track = home.nowPlaying.track
     val cinema = home.layout == HomeLayout.Cinema
+    val clock = home.layout == HomeLayout.Clock
+    /** Where Home lands: the big clock in the clock layout, else the first app. */
+    val homeSection = if (clock) Section.Hero else Section.Apps
+    val screenH = LocalConfiguration.current.screenHeightDp.dp
     val motion = remember { FocusMotion() }
     val density = LocalDensity.current
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -132,6 +178,11 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
     /** False until focus first lands on the apps row (the window's own initial focus goes top-left). */
     var settled by remember { mutableStateOf(false) }
     val enter = remember { Animatable(0f) }
+    /** Clock layout: 0 = the big clock, 1 = the apps page. Follows focus; read only while drawing. */
+    var page by remember { mutableIntStateOf(0) }
+    val pageAnim = remember { Animatable(0f) }
+    /** The header clock's bounds, where the big clock lands. */
+    var headerTime by remember { mutableStateOf<Rect?>(null) }
 
     val topIds = listOf("top:all", "top:cc", "top:settings")
     val cams = home.camera
@@ -143,6 +194,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
     }
     fun ids(s: Section): List<String> = when (s) {
         Section.Top -> topIds
+        Section.Hero -> if (clock) listOf("hero") else emptyList()
         Section.Widgets -> widgetIds
         Section.Apps -> apps.map { it.id }
         Section.Content -> shelfItems.map { "c:" + it.key }
@@ -154,6 +206,11 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
     }
     fun onFocused(s: Section, i: Int) {
         section = s
+        when (s) {
+            Section.Hero -> page = 0
+            Section.Widgets, Section.Apps, Section.Content -> page = 1
+            Section.Top -> {}
+        }
         lastIndex[s.ordinal] = i
         focusMoves++
     }
@@ -165,9 +222,18 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
         }
         Dir.Up, Dir.Down -> {
             // Cinema puts the app's content above the carousel; classic puts it below the apps.
-            val order = if (cinema) CinemaOrder else ClassicOrder
+            val order = when {
+                cinema -> CinemaOrder
+                clock -> ClockOrder
+                else -> ClassicOrder
+            }
             val at = order.indexOf(section)
-            val next = if (dir == Dir.Up) order.take(at).reversed() else order.drop(at + 1)
+            var next = if (dir == Dir.Up) order.take(at).reversed() else order.drop(at + 1)
+            if (clock && dir == Dir.Down) {
+                // Down from the clock goes straight to the apps; from the header, stay on the page that's showing.
+                if (section == Section.Hero) next = listOf(Section.Apps) + next
+                if (section == Section.Top && page == 1) next = next - Section.Hero
+            }
             next.firstOrNull { ids(it).isNotEmpty() }?.let { focus(it) } ?: false
         }
     }
@@ -225,15 +291,36 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
             val keep = remember(density) { KeepInView(with(density) { 120.dp.toPx() }) }
 
             // Entrance: wallpaper settles, then header, widgets, apps and content rise in turn.
+            fun staggerP(k: Int) = EaseOut.transform(((enter.value - k * 0.09f) / 0.62f).coerceIn(0f, 1f))
             fun Modifier.stagger(k: Int) = graphicsLayer {
-                val p = EaseOut.transform(((enter.value - k * 0.09f) / 0.62f).coerceIn(0f, 1f))
+                val p = staggerP(k)
                 alpha = p
                 translationY = (1f - p) * 22.dp.toPx()
             }
 
             // The photo and its scrims are cached in one offscreen layer: one full-screen pass per frame
             // instead of four (the GPU is fill-rate bound), redrawn only when the picture changes.
-            Box(Modifier.fillMaxSize().graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }.background(Color.Black)) {
+            // Clock layout: the layer is taller than the screen and slides up a little as the page scrolls (parallax).
+            // Moving a cached layer costs nothing extra: it's still one textured pass.
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .then(
+                        if (clock) Modifier.wrapContentHeight(Alignment.Top, unbounded = true).height(screenH + Parallax)
+                        else Modifier.fillMaxHeight()
+                    )
+                    .graphicsLayer {
+                        compositingStrategy = CompositingStrategy.Offscreen
+                        if (clock) {
+                            val p = pageAnim.value
+                            translationY = -p * Parallax.toPx()
+                            val s = 1f + 0.035f * p
+                            scaleX = s
+                            scaleY = s
+                        }
+                    }
+                    .background(Color.Black)
+            ) {
             if (cinema) Isolated {
                 CinemaBackdrop(shelfShown, heroItem, Modifier.graphicsLayer {
                     val s = 1.06f - 0.06f * EaseOut.transform(enter.value)
@@ -247,17 +334,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                 scaleX = s
                 scaleY = s
             })
-            Box(
-                Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(
-                        0f to Color.Black.copy(alpha = 0.50f),
-                        0.24f to Color.Black.copy(alpha = 0.12f),
-                        0.40f to Color.Black.copy(alpha = 0.28f),
-                        0.62f to Color.Black.copy(alpha = 0.80f),
-                        1f to Color.Black.copy(alpha = 0.94f),
-                    )
-                )
-            )
+            Box(Modifier.fillMaxSize().background(if (clock) clockScrim(screenH) else ClassicScrim))
             Box(
                 Modifier.fillMaxSize().background(
                     Brush.horizontalGradient(
@@ -269,9 +346,50 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
             }
             }
 
+            if (clock) {
+                HeroClock(
+                    home.weather, cityOf(home.prefs.cityId),
+                    page = { pageAnim.value },
+                    enter = { staggerP(0) },
+                    target = { headerTime },
+                )
+                Box(
+                    Modifier
+                        .align(Alignment.Center)
+                        .size(1.dp)
+                        .focusRequester(req("hero"))
+                        .onFocusChanged { if (it.isFocused) onFocused(Section.Hero, 0) }
+                        .onKeyEvent {
+                            if (!it.isSelect()) return@onKeyEvent false
+                            if (it.type == KeyEventType.KeyUp) focus(Section.Apps)
+                            true
+                        }
+                        .focusable()
+                )
+            }
+
             Column(Modifier.fillMaxSize().padding(top = 30.dp)) {
                 Box(Modifier.fillMaxWidth().padding(horizontal = sidePad)) {
-                    ClockBlock(home.weather, cityOf(home.prefs.cityId), Modifier.align(Alignment.CenterStart).stagger(0))
+                    if (clock) {
+                        // Hidden on the big-clock page; the big clock shrinks into it on the way down.
+                        ClockBlock(
+                            home.weather, cityOf(home.prefs.cityId), Modifier.align(Alignment.CenterStart),
+                            timeModifier = Modifier
+                                .onGloballyPositioned { headerTime = it.boundsInRoot() }
+                                .graphicsLayer {
+                                    alpha = ramp(pageAnim.value, HANDOVER, 1f)
+                                    compositingStrategy = CompositingStrategy.ModulateAlpha
+                                },
+                            infoModifier = Modifier.graphicsLayer {
+                                val p = ramp(pageAnim.value, 0.8f, 1f)
+                                alpha = p * staggerP(0)
+                                translationY = (1f - p) * 10.dp.toPx()
+                                compositingStrategy = CompositingStrategy.ModulateAlpha
+                            },
+                        )
+                    } else {
+                        ClockBlock(home.weather, cityOf(home.prefs.cityId), Modifier.align(Alignment.CenterStart).stagger(0))
+                    }
                     Row(Modifier.align(Alignment.CenterEnd).stagger(0), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                         CircleButton(Glyph.Apps, req("top:all"), { onFocused(Section.Top, 0) }, { showAll = true })
                         CircleButton(Glyph.Controls, req("top:cc"), { onFocused(Section.Top, 1) }, { home.openControlCenter() })
@@ -279,6 +397,13 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                     }
                 }
 
+                // Clock layout: everything below the header is the second page, a screen further down.
+                Column(
+                    Modifier.weight(1f).then(
+                        if (clock) Modifier.graphicsLayer { translationY = (1f - pageAnim.value) * screenH.toPx() }
+                        else Modifier
+                    )
+                ) {
                 // Dashboard: cameras on the start side, whatever is playing on the end side.
                 if (widgetIds.isNotEmpty()) {
                     Row(
@@ -291,7 +416,8 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                             dashCams.forEachIndexed { slot, channel ->
                                 val iCam = i++
                                 CameraCard(
-                                    cams, channel, slot, active = !showAll, req("w:cam$slot"), { onFocused(Section.Widgets, iCam) },
+                                    cams, channel, slot, active = !showAll && (!clock || page == 1), req("w:cam$slot"),
+                                    { onFocused(Section.Widgets, iCam) },
                                     { home.openCamera(channel, it) }, WidgetHeight,
                                 )
                             }
@@ -385,6 +511,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                     ) }
                 }
                 }
+                }
             }
 
             AnimatedVisibility(
@@ -424,7 +551,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
         if (apps.isEmpty()) return@LaunchedEffect
         if (shelfApp == null || apps.none { it.id == shelfApp?.id }) shelfApp = apps.first()
         withFrameNanos { }
-        if (!settled) settled = focus(Section.Apps, 0)
+        if (!settled) settled = focus(homeSection, 0)
         else if (section == Section.Apps) focus(Section.Apps)
     }
 
@@ -433,7 +560,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
     LaunchedEffect(windowFocused) {
         if (!windowFocused || showAll || menuApp != null) return@LaunchedEffect
         withFrameNanos { }
-        if (!settled) settled = focus(Section.Apps, 0) else focus(section)
+        if (!settled) settled = focus(homeSection, 0) else focus(section)
     }
 
     // The now-playing card can vanish while focused.
@@ -451,7 +578,18 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
         menuApp = null
         showAll = false
         motion.lastDir = null
-        focus(Section.Apps, 0)
+        // Coming back from another app: be on the clock already; pressed on the home screen: scroll up to it.
+        if (home.homeSnap) pageAnim.snapTo(0f)
+        home.homeSnap = false
+        focus(homeSection, 0)
+    }
+
+    // The page follows focus. Interruptible: a quick Up/Down reverses mid-way from the current speed.
+    LaunchedEffect(Unit) {
+        snapshotFlow { page }.collectLatest { target ->
+            if (home.quiet) pageAnim.snapTo(target.toFloat())
+            else pageAnim.animateTo(target.toFloat(), spring(dampingRatio = 1f, stiffness = 110f))
+        }
     }
 
     // Content for the focused app; refreshed whenever we come back. While focus travels along the apps it

@@ -66,7 +66,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (intent.hasCategory(Intent.CATEGORY_HOME)) home.homeSignal++
+        if (intent.hasCategory(Intent.CATEGORY_HOME)) {
+            home.homeSnap = !hasWindowFocus()
+            home.homeSignal++
+        }
     }
 
     override fun onStart() {

@@ -28,7 +28,7 @@ class Prefs(context: Context) {
         set(v) = sp.edit().putString("tileStyle", v.name).apply()
 
     var layout: HomeLayout
-        get() = runCatching { HomeLayout.valueOf(sp.getString("layout", null)!!) }.getOrDefault(HomeLayout.Classic)
+        get() = runCatching { HomeLayout.valueOf(sp.getString("layout", null)!!) }.getOrDefault(HomeLayout.Clock)
         set(v) = sp.edit().putString("layout", v.name).apply()
 
     var cityId: String

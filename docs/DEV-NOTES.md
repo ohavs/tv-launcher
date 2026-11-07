@@ -90,6 +90,22 @@
 - Cinematic layout reads `lastIndex` while composing → `focusMoves` state forces recomposition on focus moves.
 - ImageLoader cache key includes the requested width (thumbnails vs backdrops).
 
+## Clock layout (big clock + parallax, v1.0.16)
+- Layout `Clock` (default; Settings → פריסה cycles Classic → Clock → Cinema). Page 0 = big clock (`HeroClock.kt`),
+  page 1 = the classic layout. Focus decides the page (`Section.Hero` → 0, Widgets/Apps/Content → 1, Top keeps it);
+  Down from the clock → apps, Up from cameras → clock. Home (from another app) snaps to the clock
+  (`homeSnap` = `!hasWindowFocus()` in `onNewIntent`); Back/Home on the home screen scrolls up to it.
+- All motion is draw-phase only (`pageAnim` read in `graphicsLayer`): photo layer is screen + 120dp tall and slides up
+  120dp (+3.5% zoom) while the page moves a full screen; the cached offscreen layer is only re-positioned, no re-raster.
+- Big clock = Roboto variable wght 200 at 280sp, lineHeight in the same ratio as the 56/60sp header clock, so scaling
+  by height ratio lands it exactly on the header clock (measured with `boundsInRoot`, before the layer transform).
+  It lands at p=0.82, then crossfades to the header clock (0.84→1): no double image.
+- Cameras are inactive on the clock page (start when the page scrolls down, ~1 s "connecting").
+- Measured: idle on the clock page 0 frames; Down/Up ×8: 2.2% janky, p99 30 ms, GPU p99 14 ms.
+  PSS ~153 MB fresh (GL ~90 MB); Skia's cache grows to ~145 MB GL after long sessions and is trimmed when hidden.
+- Slowed-down captures: `settings put global animator_duration_scale 10` (then `settings delete`); `screenrecord`
+  drops most frames on this device. `pip install imageio-ffmpeg` gives an ffmpeg for frame extraction.
+
 ## Performance (measured 2026-10-27, `dumpsys gfxinfo` + `framestats` while pressing DPAD)
 - GPU (PowerVR) is fill-rate bound: each full-screen translucent pass costs ~5 ms. Wallpaper/backdrop + scrims live in
   one `CompositingStrategy.Offscreen` layer (cached, redrawn only when the picture changes); no window background

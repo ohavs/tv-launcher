@@ -57,6 +57,8 @@ class HomeController(private val activity: ComponentActivity) {
         private set
     private val prefsListener = prefs.listen { if (it == Prefs.QUIET) quiet = prefs.quiet }
 
+    /** Set with [homeSignal] when Home brought us back from another app: jump to the start, no scrolling. */
+    var homeSnap = false
     /** Bumped when Home/Back is pressed on the home screen: back to the first app. */
     var homeSignal by mutableIntStateOf(0)
     /** Bumped each time the launcher becomes visible again (shelf refresh, entrance animation). */
