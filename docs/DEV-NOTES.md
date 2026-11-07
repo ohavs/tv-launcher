@@ -118,6 +118,8 @@
   remote's keys; the app below stays resumed (verified: YouTube kept playing under it). `FLAG_DIM_BEHIND` dims the rest.
   A ComposeView outside an activity needs Lifecycle + SavedStateRegistry + ViewModelStore owners on the view tree.
 - `hid` long press: hold the report for ~1100 ms (`report` usage, `delay` 1100, `report [0,0]`).
+- Panel open ⇔ `dumpsys window | grep mCurrentFocus` shows `Window{… u0 com.ohav.tvhome}` (no activity name).
+  `dumpsys window windows` does not print "ACCESSIBILITY_OVERLAY" — don't grep for it.
 - Sleep timer: `Handler` delays use uptime → stop while the device sleeps; the timer is cancelled on `ACTION_SCREEN_OFF`.
   Screensaver (dream) is still "interactive" → no SCREEN_OFF, timer keeps running.
 - HDMI-CEC: `power_control_mode=broadcast`, `tv_send_standby_on_sleep=1` → device sleep turns the TV off.
