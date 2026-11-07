@@ -2,8 +2,8 @@
 
 ## Now
 - Live: **TV Home v1.0.14** on the TV (Google TV Streamer, `10.0.0.43:5555`). Repo https://github.com/ohavs/tv-launcher (public).
-- **Next: ROADMAP שלב L3** (Imilab via go2rtc) → `docs/ROADMAP.md`. Phone stages last (user still deciding). L2b optional.
-- Pending (user): sign in to our YouTube with the code (yt.be/activate) and confirm no ads in the account.
+- **Next: TV-only stages** (user picks: 6-TV part / 9 / L2b / 10) → `docs/ROADMAP.md`. L3 (Imilab) + phone stages last (2026-11-07).
+- L4 confirmed by user (2026-11-07): signed in, no ads in the account.
 - TV is set to: layout **Classic**, tiles **Round**, cameras primary = channel 2.
 
 ## Done
