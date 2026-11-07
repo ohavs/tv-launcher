@@ -78,6 +78,24 @@ class NowPlaying(private val context: Context) {
         if (c.playbackState?.state == PlaybackState.STATE_PLAYING) c.transportControls.pause() else c.transportControls.play()
     }
 
+    /** Jumps [ms] forward (or back when negative) from the current position. */
+    fun seekBy(ms: Long) {
+        val c = controller ?: return
+        val s = c.playbackState ?: return
+        if (s.actions and PlaybackState.ACTION_SEEK_TO == 0L) {
+            if (ms > 0) c.transportControls.fastForward() else c.transportControls.rewind()
+            return
+        }
+        var pos = s.position
+        if (s.state == PlaybackState.STATE_PLAYING) {
+            pos += ((SystemClock.elapsedRealtime() - s.lastPositionUpdateTime) * s.playbackSpeed).toLong()
+        }
+        val duration = c.metadata?.getLong(MediaMetadata.METADATA_KEY_DURATION) ?: 0L
+        var target = (pos + ms).coerceAtLeast(0L)
+        if (duration > 0) target = target.coerceAtMost(duration)
+        c.transportControls.seekTo(target)
+    }
+
     /** Opens the player's own screen; false when the session doesn't offer one. */
     fun open(): Boolean {
         val pi = controller?.sessionActivity ?: return false
@@ -157,5 +175,13 @@ class NowPlaying(private val context: Context) {
 
     companion object {
         private const val STALE_MS = 30 * 60_000L
+
+        /** Pauses everything that is playing (before the sleep timer turns the TV off). */
+        fun pauseAll(context: Context) {
+            val msm = context.getSystemService(MediaSessionManager::class.java)
+            runCatching { msm.getActiveSessions(ComponentName(context, MediaListener::class.java)) }.getOrDefault(emptyList())
+                .filter { it.playbackState?.state == PlaybackState.STATE_PLAYING }
+                .forEach { runCatching { it.transportControls.pause() } }
+        }
     }
 }

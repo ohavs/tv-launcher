@@ -55,6 +55,9 @@ class FocusMotion {
 
 val LocalFocusMotion = staticCompositionLocalOf { FocusMotion() }
 
+/** Quiet mode (setting): no tilt or edge bump on focus. */
+val LocalQuiet = staticCompositionLocalOf { false }
+
 private val tiltSpring = spring<Float>(dampingRatio = 0.38f, stiffness = 160f)
 
 /**
@@ -77,6 +80,7 @@ fun ParallaxSurface(
     content: @Composable BoxScope.() -> Unit,
 ) {
     val motion = LocalFocusMotion.current
+    val quiet = LocalQuiet.current
     val scale by animateFloatAsState(
         targetValue = when {
             pressed -> focusScale - 0.07f
@@ -97,14 +101,14 @@ fun ParallaxSurface(
     val nudgeY = remember { Animatable(0f) }
 
     LaunchedEffect(focused) {
-        if (!focused || !tilt) return@LaunchedEffect
+        if (!focused || !tilt || quiet) return@LaunchedEffect
         val d = motion.lastDir ?: return@LaunchedEffect
         launch { tiltY.snapTo(d.dx * 10f); tiltY.animateTo(0f, tiltSpring) }
         launch { tiltX.snapTo(-d.dy * 10f); tiltX.animateTo(0f, tiltSpring) }
     }
     LaunchedEffect(motion.bumpCount) {
         val d = motion.bumpDir
-        if (!focused || d == null) return@LaunchedEffect
+        if (!focused || d == null || quiet) return@LaunchedEffect
         launch {
             nudgeX.animateTo(d.dx * 9f, tween(90, easing = FastOutSlowInEasing))
             nudgeX.animateTo(0f, spring(dampingRatio = 0.3f, stiffness = 380f))

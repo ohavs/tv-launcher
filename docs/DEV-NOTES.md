@@ -111,6 +111,17 @@
 - After the fix (classic layout, 2 cameras): idle 0 frames; D-pad ~6% janky, p99 ~60 ms (was 45–65%, p99 150 ms).
   PSS ~143 MB (odex + background layer).
 
+## Control center / overlays (stage 6)
+- Remote has no spare buttons (keylayout: POWER, ASSIST, D-pad, BACK, HOME, volume/mute, MACRO_1, BUTTON_3 YouTube,
+  BUTTON_4 Netflix). Control center = long press Netflix (600 ms, `HomeKeyService`) or the sliders circle on the dashboard.
+- Panel = `TYPE_ACCESSIBILITY_OVERLAY` window added by `HomeKeyService` (`control/Overlay.kt`). Focusable → it gets the
+  remote's keys; the app below stays resumed (verified: YouTube kept playing under it). `FLAG_DIM_BEHIND` dims the rest.
+  A ComposeView outside an activity needs Lifecycle + SavedStateRegistry + ViewModelStore owners on the view tree.
+- `hid` long press: hold the report for ~1100 ms (`report` usage, `delay` 1100, `report [0,0]`).
+- Sleep timer: `Handler` delays use uptime → stop while the device sleeps; the timer is cancelled on `ACTION_SCREEN_OFF`.
+  Screensaver (dream) is still "interactive" → no SCREEN_OFF, timer keeps running.
+- HDMI-CEC: `power_control_mode=broadcast`, `tv_send_standby_on_sleep=1` → device sleep turns the TV off.
+
 ## TV provider (Top Shelf)
 - Needs `READ_EPG_DATA` (normal) **and** `android.permission.READ_TV_LISTINGS` (runtime on 14; `pm grant`).
 - Non-privileged callers: no selection allowed → query all, filter in code. Preview channels exist for YouTube,

@@ -21,7 +21,7 @@ import com.ohav.tvhome.data.Sky
 import kotlin.math.cos
 import kotlin.math.sin
 
-enum class Glyph { Apps, Settings, Play, Pause, Home, Camera }
+enum class Glyph { Apps, Settings, Play, Pause, Home, Camera, Controls }
 
 /** Small line icons drawn in code (no icon font or extra dependency). */
 @Composable
@@ -75,6 +75,13 @@ fun GlyphIcon(glyph: Glyph, color: Color, size: Dp, modifier: Modifier = Modifie
                     moveTo(s * 0.66f, s * 0.44f); lineTo(s * 0.92f, s * 0.3f); lineTo(s * 0.92f, s * 0.7f); lineTo(s * 0.66f, s * 0.56f)
                 }
                 drawPath(lens, color, style = stroke)
+            }
+            Glyph.Controls -> {
+                // Two sliders.
+                for ((y, knob) in listOf(0.32f to 0.36f, 0.68f to 0.64f)) {
+                    drawLine(color, Offset(s * 0.1f, s * y), Offset(s * 0.9f, s * y), strokeWidth = w * 1.1f, cap = StrokeCap.Round)
+                    drawCircle(color, s * 0.13f, Offset(s * knob, s * y))
+                }
             }
         }
     }

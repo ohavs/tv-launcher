@@ -133,7 +133,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
     var settled by remember { mutableStateOf(false) }
     val enter = remember { Animatable(0f) }
 
-    val topIds = listOf("top:all", "top:settings")
+    val topIds = listOf("top:all", "top:cc", "top:settings")
     val cams = home.camera
     val dashCams = cams?.channels?.take(2).orEmpty()
     val widgetIds = buildList {
@@ -172,7 +172,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
         }
     }
 
-    CompositionLocalProvider(LocalFocusMotion provides motion) {
+    CompositionLocalProvider(LocalFocusMotion provides motion, LocalQuiet provides home.quiet) {
         Box(
             Modifier
                 .fillMaxSize()
@@ -242,7 +242,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                 })
                 CinemaScrims(isRtl)
             } else {
-            WallpaperBackground(Modifier.graphicsLayer {
+            WallpaperBackground(quiet = home.quiet, modifier = Modifier.graphicsLayer {
                 val s = 1.06f - 0.06f * EaseOut.transform(enter.value)
                 scaleX = s
                 scaleY = s
@@ -274,7 +274,8 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                     ClockBlock(home.weather, cityOf(home.prefs.cityId), Modifier.align(Alignment.CenterStart).stagger(0))
                     Row(Modifier.align(Alignment.CenterEnd).stagger(0), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                         CircleButton(Glyph.Apps, req("top:all"), { onFocused(Section.Top, 0) }, { showAll = true })
-                        CircleButton(Glyph.Settings, req("top:settings"), { onFocused(Section.Top, 1) }, { openSettings() })
+                        CircleButton(Glyph.Controls, req("top:cc"), { onFocused(Section.Top, 1) }, { home.openControlCenter() })
+                        CircleButton(Glyph.Settings, req("top:settings"), { onFocused(Section.Top, 2) }, { openSettings() })
                     }
                 }
 
@@ -410,6 +411,10 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
 
     LaunchedEffect(home.resumeSignal) {
         if (home.resumeSignal == 0) return@LaunchedEffect
+        if (home.quiet) {
+            enter.snapTo(1f)
+            return@LaunchedEffect
+        }
         enter.snapTo(0f)
         enter.animateTo(1f, tween(1100, easing = LinearEasing))
     }

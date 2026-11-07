@@ -48,6 +48,7 @@ import com.ohav.tvhome.data.RtspProbe
 import com.ohav.tvhome.data.ScanResult
 import com.ohav.tvhome.data.CITIES
 import com.ohav.tvhome.data.Prefs
+import com.ohav.tvhome.data.RemoteKey
 import com.ohav.tvhome.data.TileStyle
 import com.ohav.tvhome.data.cityOf
 import com.ohav.tvhome.media.MediaListener
@@ -92,6 +93,10 @@ private fun SettingsScreen() {
     var mediaAccess by remember { mutableStateOf(false) }
     var ownYouTube by remember { mutableStateOf(prefs.ownYouTube) }
     var sponsorBlock by remember { mutableStateOf(prefs.sponsorBlock) }
+    var wallpaperMin by remember { mutableStateOf(prefs.wallpaperMinutes) }
+    var quiet by remember { mutableStateOf(prefs.quiet) }
+    var keyTargets by remember { mutableStateOf(RemoteKey.entries.associateWith { prefs.keyTarget(it) }) }
+    var pickingKey by remember { mutableStateOf<RemoteKey?>(null) }
     val cams = remember { CameraPrefs(context) }
     var camEnabled by remember { mutableStateOf(cams.enabled) }
     var camHost by remember { mutableStateOf(cams.host) }
@@ -161,6 +166,10 @@ private fun SettingsScreen() {
         camHidden = cams.hidden
         camPrimary = cams.primary
         homeKey = HomeKeyService.isEnabled(context)
+        // The control center can switch these too.
+        quiet = prefs.quiet
+        ownYouTube = prefs.ownYouTube
+        sponsorBlock = prefs.sponsorBlock
         mediaAccess = context.getSystemService(NotificationManager::class.java)
             .isNotificationListenerAccessGranted(ComponentName(context, MediaListener::class.java))
         onPauseOrDispose { }
@@ -246,6 +255,18 @@ private fun SettingsScreen() {
                         }
                     }
                     MenuRow(
+                        stringResource(R.string.wallpaper_every),
+                        value = if (wallpaperMin == 0) stringResource(R.string.never) else stringResource(R.string.every_min, wallpaperMin),
+                    ) {
+                        val choices = Prefs.WALLPAPER_CHOICES
+                        wallpaperMin = choices[(choices.indexOf(wallpaperMin) + 1) % choices.size]
+                        prefs.wallpaperMinutes = wallpaperMin
+                    }
+                    MenuRow(stringResource(R.string.quiet_mode), value = stringResource(if (quiet) R.string.on else R.string.off)) {
+                        quiet = !quiet
+                        prefs.quiet = quiet
+                    }
+                    MenuRow(
                         stringResource(R.string.media_access),
                         value = stringResource(if (mediaAccess) R.string.allowed else R.string.not_allowed),
                     ) { }
@@ -259,6 +280,29 @@ private fun SettingsScreen() {
                         MenuRow(stringResource(R.string.yt_sponsorblock), value = stringResource(if (sponsorBlock) R.string.on else R.string.off)) {
                             sponsorBlock = !sponsorBlock
                             prefs.sponsorBlock = sponsorBlock
+                        }
+                    }
+
+                    SectionTitle(stringResource(R.string.remote_buttons))
+                    Text(
+                        stringResource(R.string.cc_hint),
+                        color = Color.White.copy(alpha = 0.45f), fontSize = 16.sp, modifier = Modifier.padding(start = 6.dp, bottom = 4.dp),
+                    )
+                    RemoteKey.entries.forEach { key ->
+                        val target = keyTargets[key] ?: key.defaultPackage
+                        val label = allApps.firstOrNull { it.packageName == target }?.label ?: target
+                        MenuRow(
+                            stringResource(if (key == RemoteKey.YouTube) R.string.key_youtube else R.string.key_netflix),
+                            value = label + if (pickingKey == key) "  ▲" else "  ▼",
+                        ) { pickingKey = if (pickingKey == key) null else key }
+                        if (pickingKey == key) {
+                            allApps.filter { it.packageName != context.packageName }.distinctBy { it.packageName }.forEach { app ->
+                                MenuRow(app.label, value = if (app.packageName == target) "✓" else null) {
+                                    prefs.setKeyTarget(key, app.packageName)
+                                    keyTargets = keyTargets + (key to app.packageName)
+                                    pickingKey = null
+                                }
+                            }
                         }
                     }
 

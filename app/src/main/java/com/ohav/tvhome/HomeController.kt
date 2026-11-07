@@ -52,6 +52,11 @@ class HomeController(private val activity: ComponentActivity) {
     val smartHome: ComponentName? = activity.packageManager.resolveActivity(Intent(SMART_HOME_ACTION), 0)
         ?.activityInfo?.let { ComponentName(it.packageName, it.name) }
 
+    /** Quiet mode; also switched from the control center while the home screen is showing. */
+    var quiet by mutableStateOf(prefs.quiet)
+        private set
+    private val prefsListener = prefs.listen { if (it == Prefs.QUIET) quiet = prefs.quiet }
+
     /** Bumped when Home/Back is pressed on the home screen: back to the first app. */
     var homeSignal by mutableIntStateOf(0)
     /** Bumped each time the launcher becomes visible again (shelf refresh, entrance animation). */
@@ -128,7 +133,13 @@ class HomeController(private val activity: ComponentActivity) {
         Rect.Zero,
     )
 
-    fun systemSettings() = start(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), Rect.Zero)
+    fun openControlCenter() {
+        val service = HomeKeyService.instance
+        if (service == null) Toast.makeText(activity, R.string.cc_needs_service, Toast.LENGTH_LONG).show()
+        else service.controlCenter.open()
+    }
+
+    fun systemSettings() =start(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), Rect.Zero)
 
     /** Moves [id] by [delta] positions; returns false at the edges. */
     fun move(id: String, delta: Int): Boolean {
@@ -144,7 +155,7 @@ class HomeController(private val activity: ComponentActivity) {
     fun saveOrder() = prefs.saveOrder(apps)
 
     private fun start(intent: Intent, from: Rect) {
-        val opts = if (from.width > 0f) ActivityOptions.makeScaleUpAnimation(
+        val opts = if (from.width > 0f && !quiet) ActivityOptions.makeScaleUpAnimation(
             activity.window.decorView, from.left.toInt(), from.top.toInt(), from.width.toInt(), from.height.toInt(),
         ).toBundle() else null
         try {

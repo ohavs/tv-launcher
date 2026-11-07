@@ -76,4 +76,23 @@
     <string name="yt_sponsorblock">Skip sponsors (SponsorBlock)</string>
     <string name="yt_skipped_sponsor">Skipped sponsor</string>
     <string name="yt_skipped_selfpromo">Skipped self-promotion</string>
+    <string name="cc_title">Control center</string>
+    <string name="cc_needs_service">Turn on the Home button service in Settings</string>
+    <string name="cc_hint">Hold the Netflix button to open the control center</string>
+    <string name="sleep_timer">Sleep timer (minutes)</string>
+    <string name="sleep_off">Off</string>
+    <string name="sleep_in_min">Off in %1$d min</string>
+    <string name="sleep_in_sec">Off in %1$d s</string>
+    <string name="sleep_warning">The TV turns off in %1$d seconds</string>
+    <string name="sleep_warning_hint">OK — 15 more minutes  ·  Back — cancel</string>
+    <string name="next_wallpaper">Next wallpaper</string>
+    <string name="quiet_mode">Quiet mode (fewer animations)</string>
+    <string name="yt_own_short">Ad-free YouTube</string>
+    <string name="sponsorblock_short">Skip sponsors</string>
+    <string name="remote_buttons">Remote buttons</string>
+    <string name="key_youtube">YouTube button</string>
+    <string name="key_netflix">Netflix button (short press)</string>
+    <string name="wallpaper_every">Change wallpaper</string>
+    <string name="every_min">Every %1$d min</string>
+    <string name="never">Never</string>
 </resources>

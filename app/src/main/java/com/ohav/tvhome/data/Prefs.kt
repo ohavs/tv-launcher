@@ -2,6 +2,12 @@ package com.ohav.tvhome.data
 
 import android.content.Context
 
+/** Remote buttons we can remap. Long press on Netflix opens the control center. */
+enum class RemoteKey(val defaultPackage: String) {
+    YouTube("com.google.android.youtube.tv"),
+    Netflix("com.netflix.ninja"),
+}
+
 class Prefs(context: Context) {
     private val sp = context.getSharedPreferences("home", Context.MODE_PRIVATE)
 
@@ -42,6 +48,25 @@ class Prefs(context: Context) {
         get() = sp.getString("weather", null)?.let { WeatherNow.fromJson(it) }
         set(v) = sp.edit().putString("weather", v?.toJson()).apply()
 
+    /** Fewer animations: no entrance, tilt, launch zoom or wallpaper crossfade. */
+    var quiet: Boolean
+        get() = sp.getBoolean(QUIET, false)
+        set(v) = sp.edit().putBoolean(QUIET, v).apply()
+
+    /** Minutes between wallpapers; 0 = keep the current one. */
+    var wallpaperMinutes: Int
+        get() = sp.getInt("wallpaperMin", 5)
+        set(v) = sp.edit().putInt("wallpaperMin", v).apply()
+
+    /** App a remote button opens (short press). */
+    fun keyTarget(key: RemoteKey): String = sp.getString("key_${key.name}", null) ?: key.defaultPackage
+    fun setKeyTarget(key: RemoteKey, pkg: String) = sp.edit().putString("key_${key.name}", pkg).apply()
+
+    /** Calls [onChange] with the key of every changed setting; keep the returned listener referenced. */
+    fun listen(onChange: (String?) -> Unit) =
+        android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key -> onChange(key) }
+            .also { sp.registerOnSharedPreferenceChangeListener(it) }
+
     /**
      * Applies the saved order; apps never seen before are slotted in by [defaultRank]
      * among the new ones and appended after the saved ones.
@@ -76,6 +101,9 @@ class Prefs(context: Context) {
     }
 
     companion object {
+        const val QUIET = "quiet"
+        val WALLPAPER_CHOICES = listOf(1, 5, 15, 30, 60, 0)
+
         private val FAVORITES = listOf(
             "com.netflix.ninja",
             "com.google.android.youtube.tv",

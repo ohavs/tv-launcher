@@ -1,10 +1,19 @@
 # PROGRESS
 
 ## Now
-- Live: **TV Home v1.0.14** on the TV (Google TV Streamer, `10.0.0.43:5555`). Repo https://github.com/ohavs/tv-launcher (public).
-- **Next: TV-only stages** (user picks: 6-TV part / 9 / L2b / 10) → `docs/ROADMAP.md`. L3 (Imilab) + phone stages last (2026-11-07).
+- Live: **TV Home v1.0.15** on the TV (Google TV Streamer, `10.0.0.43:5555`). Repo https://github.com/ohavs/tv-launcher (public).
+- **Next: ROADMAP שלב L2b** (smart dashboard) → then 10 → G (Google Photos/Drive) → 9 → L3 → phone. `docs/ROADMAP.md`.
 - L4 confirmed by user (2026-11-07): signed in, no ads in the account.
-- TV is set to: layout **Classic**, tiles **Round**, cameras primary = channel 2.
+- TV is set to: layout **Classic**, cameras primary = channel 2.
+
+## Last session (2026-11-07) — stage 6 (TV part)
+- User choices: control center opens by long-press Netflix + dashboard button; sleep timer = full off (CEC);
+  panel has now-playing, quick switches, cameras; YouTube/Netflix buttons remappable (short press).
+- Built `control/` (Overlay, ControlCenter, SleepTimer), wallpaper interval, quiet mode, remote-button mapping in Settings.
+- Verified on TV: panel over home and over a playing video (video keeps playing), pause/−10 s, next wallpaper,
+  Netflix short/long press, Home closes it, 15-min sleep timer → device slept (`mLastSleepReason=accessibility`).
+  Not seen on screen: the 1-minute notice (my check missed it). Details: DEV-NOTES "Control center".
+- User: control center design + features will be revisited later.
 
 ## Done
 - Debloat: 11 system packages + iQIYI/Disney+/Apple TV disabled (`debloat.txt`, `pm disable-user`); Projectivy + Surfshark uninstalled on request.
@@ -18,7 +27,7 @@
 - KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD.
 - Local keystore `C:\Users\ohav8\.android-keys\tv-launcher.jks` + `keystore.properties` (repo root, gitignored). Same key forever.
 
-## Last session (2026-10-27, late) — YouTube start delay
+## Earlier (2026-10-27, late) — YouTube start delay
 - User: video click → grey screen with a black play icon, video starts later ("plays the ad behind an image").
 - Found: server-side ad enforcement (googlevideo holds media ~10 s when ads were stripped) + WebView default poster.
   Fixed (v1.0.14): `isInlinePlaybackNoAd` on the player request → no ads scheduled, start ~2 s; black instead of poster.

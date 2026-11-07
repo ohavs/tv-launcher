@@ -76,4 +76,23 @@
     <string name="yt_sponsorblock">דילוג על ספונסרים (SponsorBlock)</string>
     <string name="yt_skipped_sponsor">דילגנו על ספונסר</string>
     <string name="yt_skipped_selfpromo">דילגנו על קידום עצמי</string>
+    <string name="cc_title">מרכז בקרה</string>
+    <string name="cc_needs_service">צריך להפעיל את שירות כפתור הבית בהגדרות</string>
+    <string name="cc_hint">לחיצה ארוכה על Netflix פותחת את מרכז הבקרה</string>
+    <string name="sleep_timer">טיימר שינה (דקות)</string>
+    <string name="sleep_off">כבוי</string>
+    <string name="sleep_in_min">נכבה בעוד %1$d דק׳</string>
+    <string name="sleep_in_sec">נכבה בעוד %1$d שנ׳</string>
+    <string name="sleep_warning">הטלוויזיה תיכבה בעוד %1$d שניות</string>
+    <string name="sleep_warning_hint">OK — עוד 15 דקות  ·  חזור — ביטול</string>
+    <string name="next_wallpaper">רקע הבא</string>
+    <string name="quiet_mode">מצב שקט (פחות אנימציות)</string>
+    <string name="yt_own_short">YouTube בלי פרסומות</string>
+    <string name="sponsorblock_short">דילוג על ספונסרים</string>
+    <string name="remote_buttons">כפתורי השלט</string>
+    <string name="key_youtube">כפתור YouTube</string>
+    <string name="key_netflix">כפתור Netflix (לחיצה קצרה)</string>
+    <string name="wallpaper_every">החלפת רקע</string>
+    <string name="every_min">כל %1$d דק׳</string>
+    <string name="never">בלי החלפה</string>
 </resources>
