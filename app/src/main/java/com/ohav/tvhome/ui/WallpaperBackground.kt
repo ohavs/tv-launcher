@@ -1,8 +1,5 @@
 package com.ohav.tvhome.ui
 
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -11,107 +8,71 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.ohav.tvhome.data.Prefs
-import kotlinx.coroutines.Dispatchers
+import com.ohav.tvhome.data.WallpaperImages
+import com.ohav.tvhome.data.Wallpapers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
-
-data class Wallpaper(val file: String, val title: String, val credit: String)
-
-/** Wikimedia Commons Featured Pictures (via github.com/mihirgupta0900/tv-home), see WALLPAPER-CREDITS.md. */
-val WALLPAPERS = listOf(
-    Wallpaper("01.jpg", "Lake Louise", "Chensiyuan · CC BY-SA 4.0"),
-    Wallpaper("02.jpg", "Austnesfjorden, Lofoten", "Ximonic (Simo Räsänen) · CC BY-SA 3.0"),
-    Wallpaper("03.jpg", "Baleia Franca, Brazil", "Ctseelig · CC BY-SA 4.0"),
-    Wallpaper("04.jpg", "Lago do Cuniã, Amazon", "RodrigoErse · CC BY-SA 4.0"),
-    Wallpaper("05.jpg", "Spullersee, Austria", "Wikimedia Commons · CC BY-SA 3.0 AT"),
-    Wallpaper("06.jpg", "Paczków, Poland", "Jacek Halicki · CC BY-SA 3.0"),
-    Wallpaper("07.jpg", "Stromboli", "Carsten Steger · CC BY-SA 4.0"),
-    Wallpaper("08.jpg", "Flatirons Sunrise", "Tyler Cipriani · CC BY-SA 4.0"),
-    Wallpaper("09.jpg", "Manneporte, Étretat", "Jörg Braukmann · CC BY-SA 4.0"),
-    Wallpaper("10.jpg", "Kjeungskjær Lighthouse", "Gordon Leggett · CC BY-SA 4.0"),
-    Wallpaper("11.jpg", "Eilean Donan Castle", "Diliff · CC BY-SA 3.0"),
-    Wallpaper("12.jpg", "Dzukou Valley", "Samudra Bikash Hazarika · CC BY-SA 4.0"),
-)
 
 private const val FADE_MS = 1800
 
-private object WallpaperState {
-    var index = (WALLPAPERS.indices).random()
-    var shownAt = 0L
-    /** Bumped by "next wallpaper" in the control center. */
-    var skips by mutableIntStateOf(0)
-    var handledSkips = 0
-}
-
-/** Shows the next photo now (the home screen picks it up when visible). */
-fun nextWallpaper() {
-    WallpaperState.skips++
-}
+/** Shows the next photo now (the home screen / screensaver picks it up when visible). */
+fun nextWallpaper() = Wallpapers.next()
 
 /**
- * Full-screen photo that crossfades to the next one every few minutes (user setting) while the
- * home screen is visible. Static between changes, so it costs nothing to draw.
+ * The current photo, moving on every few minutes (user setting) while the screen is started. [withMask] also
+ * decodes the foreground mask (depth layouts only).
  */
 @Composable
-fun WallpaperBackground(modifier: Modifier = Modifier, quiet: Boolean = false) {
+fun rememberWallpaper(withMask: Boolean, minutes: () -> Int): State<WallpaperImages?> {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    var image by remember { mutableStateOf<ImageBitmap?>(null) }
-    val prefs = remember { Prefs(context) }
-
-    LaunchedEffect(lifecycle, WallpaperState.skips) {
+    val image = remember { mutableStateOf<WallpaperImages?>(null) }
+    LaunchedEffect(lifecycle, Wallpapers.skips, withMask) {
+        val all = Wallpapers.all(context)
+        if (all.isEmpty()) return@LaunchedEffect
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             while (true) {
-                val rotateMs = prefs.wallpaperMinutes * 60_000L
+                val rotateMs = minutes() * 60_000L
                 val now = System.currentTimeMillis()
-                val skip = WallpaperState.skips != WallpaperState.handledSkips
-                val due = image != null && (skip || (rotateMs > 0 && now - WallpaperState.shownAt >= rotateMs))
-                if (due) WallpaperState.index = (WallpaperState.index + 1) % WALLPAPERS.size
-                if (image == null || due) {
-                    image = decode(context, WALLPAPERS[WallpaperState.index].file) ?: image
-                    WallpaperState.shownAt = now
-                    WallpaperState.handledSkips = WallpaperState.skips
+                val skip = Wallpapers.skips != Wallpapers.handledSkips
+                val due = Wallpapers.index < 0 || skip || (rotateMs > 0 && now - Wallpapers.shownAt >= rotateMs)
+                if (Wallpapers.index < 0) Wallpapers.index = all.indices.random()
+                else if (due) Wallpapers.index = (Wallpapers.index + 1) % all.size
+                val current = image.value
+                val want = all[Wallpapers.index]
+                if (due || current == null || current.wallpaper != want || (withMask && current.mask == null)) {
+                    image.value = Wallpapers.decode(context, want, withMask) ?: current
+                    if (due) Wallpapers.shownAt = now
+                    Wallpapers.handledSkips = Wallpapers.skips
                 }
                 if (rotateMs <= 0) awaitCancellation()
-                delay((WallpaperState.shownAt + rotateMs - System.currentTimeMillis()).coerceAtLeast(1000))
+                delay((Wallpapers.shownAt + rotateMs - System.currentTimeMillis()).coerceAtLeast(1000))
             }
         }
     }
-
-    Box(modifier.fillMaxSize().background(Color(0xFF0B0D12))) {
-        Crossfade(targetState = image, animationSpec = tween(if (quiet) 0 else FADE_MS), label = "wallpaper") { img ->
-            if (img != null) Image(img, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-        }
-    }
+    return image
 }
 
-private suspend fun decode(context: Context, file: String): ImageBitmap? = withContext(Dispatchers.IO) {
-    runCatching {
-        val screenW = context.resources.displayMetrics.widthPixels.coerceAtLeast(1280)
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        context.assets.open("wallpapers/$file").use { BitmapFactory.decodeStream(it, null, bounds) }
-        var sample = 1
-        while (bounds.outWidth / (sample * 2) >= screenW) sample *= 2
-        val opts = BitmapFactory.Options().apply {
-            inSampleSize = sample
-            inPreferredConfig = Bitmap.Config.HARDWARE
+/** Full-screen photo (classic layout), crossfading on change. Static between changes, so it costs nothing to draw. */
+@Composable
+fun WallpaperBackground(modifier: Modifier = Modifier, quiet: Boolean = false) {
+    val context = LocalContext.current
+    val prefs = remember { Prefs(context) }
+    val image = rememberWallpaper(withMask = false) { prefs.wallpaperMinutes }.value
+    Box(modifier.fillMaxSize().background(Color(0xFF0B0D12))) {
+        Crossfade(targetState = image, animationSpec = tween(if (quiet) 0 else FADE_MS), label = "wallpaper") { img ->
+            if (img != null) Image(img.bg, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         }
-        context.assets.open("wallpapers/$file").use { BitmapFactory.decodeStream(it, null, opts) }?.asImageBitmap()
-    }.getOrNull()
+    }
 }

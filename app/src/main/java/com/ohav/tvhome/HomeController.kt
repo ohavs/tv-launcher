@@ -1,5 +1,6 @@
 package com.ohav.tvhome
 
+import com.ohav.tvhome.ui.ClockFont
 import com.ohav.tvhome.camera.CameraActivity
 import com.ohav.tvhome.camera.CameraGridActivity
 import com.ohav.tvhome.data.CameraPrefs
@@ -42,6 +43,7 @@ class HomeController(private val activity: ComponentActivity) {
     var tileStyle by mutableStateOf(prefs.tileStyle)
         private set
     var layout by mutableStateOf(prefs.layout)
+    var clockFont by mutableStateOf(ClockFont.of(prefs.clockFont))
         private set
     var weather by mutableStateOf(prefs.weather)
         private set
@@ -77,6 +79,7 @@ class HomeController(private val activity: ComponentActivity) {
         resumeSignal++
         tileStyle = prefs.tileStyle
         layout = prefs.layout
+        clockFont = ClockFont.of(prefs.clockFont)
         camera = cameraPrefs.config()
         if (all.isNotEmpty()) apps = prefs.arrange(all)
         refreshWeather()

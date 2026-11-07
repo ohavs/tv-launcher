@@ -73,13 +73,14 @@ fun ClockBlock(
     modifier: Modifier = Modifier,
     timeModifier: Modifier = Modifier,
     infoModifier: Modifier = Modifier,
+    showTime: Boolean = true,
 ) {
     val context = LocalContext.current
     val now by rememberNow()
     val time = DateFormat.getTimeFormat(context).format(now)
     val date = DateFormat.format(DateFormat.getBestDateTimePattern(Locale.getDefault(), "EEEEdMMMM"), now).toString()
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        Text(
+        if (showTime) Text(
             time,
             modifier = timeModifier,
             color = Color.White,
@@ -87,7 +88,7 @@ fun ClockBlock(
             fontWeight = FontWeight.Light,
             style = TextStyle(letterSpacing = (-1).sp, lineHeight = 60.sp),
         )
-        Column(Modifier.padding(start = 20.dp).then(infoModifier)) {
+        Column(Modifier.padding(start = if (showTime) 20.dp else 0.dp).then(infoModifier)) {
         Text(
             date,
             color = Color.White.copy(alpha = 0.92f),

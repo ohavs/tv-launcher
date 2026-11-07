@@ -17,6 +17,8 @@ if not exist "%APK%" (
 "%ADB%" -s %TV% install -r "%APK%" || (echo Install failed & exit /b 1)
 "%ADB%" -s %TV% shell appops set %PKG% REQUEST_INSTALL_PACKAGES allow
 "%ADB%" -s %TV% shell pm grant %PKG% android.permission.READ_TV_LISTINGS
+"%ADB%" -s %TV% shell pm grant %PKG% android.permission.WRITE_SECURE_SETTINGS
+"%ADB%" -s %TV% shell appops set %PKG% WRITE_SETTINGS allow
 "%ADB%" -s %TV% shell pm enable com.google.android.apps.tv.launcherx
 "%ADB%" -s %TV% shell pm enable com.google.android.tungsten.setupwraith
 "%ADB%" -s %TV% shell cmd package set-home-activity --user 0 %PKG%/.MainActivity

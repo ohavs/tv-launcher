@@ -7,6 +7,16 @@
   const bridge = window.TVHomeBridge;
   const post = (msg) => { try { bridge && bridge.postMessage(JSON.stringify(msg)); } catch (e) {} };
 
+  // ---- playing state: the app keeps the screen on (no screensaver) only while a video plays ------
+  let playing = false;
+  const playState = (e) => {
+    const v = e.target;
+    if (!(v instanceof HTMLMediaElement)) return;
+    const now = !v.paused && !v.ended;
+    if (now !== playing) { playing = now; post({ t: 'playing', on: now }); }
+  };
+  ['playing', 'pause', 'ended', 'emptied'].forEach((n) => document.addEventListener(n, playState, true));
+
   // ---- ads -------------------------------------------------------------------------------------
   const notAd = (item) => !(item && (item.adSlotRenderer || item.adSlot));
 

@@ -90,21 +90,43 @@
 - Cinematic layout reads `lastIndex` while composing → `focusMoves` state forces recomposition on focus moves.
 - ImageLoader cache key includes the requested width (thumbnails vs backdrops).
 
-## Clock layout (big clock + parallax, v1.0.16)
-- Layout `Clock` (default; Settings → פריסה cycles Classic → Clock → Cinema). Page 0 = big clock (`HeroClock.kt`),
-  page 1 = the classic layout. Focus decides the page (`Section.Hero` → 0, Widgets/Apps/Content → 1, Top keeps it);
+## Clock layout (depth clock + parallax, v1.0.17)
+- Layout `Clock` (default; Settings → פריסה cycles Classic → Clock → Cinema). Page 0 = big clock, page 1 = the
+  classic layout over it. Focus decides the page (`Section.Hero` → 0, Widgets/Apps/Content → 1, Top keeps it);
   Down from the clock → apps, Up from cameras → clock. Home (from another app) snaps to the clock
   (`homeSnap` = `!hasWindowFocus()` in `onNewIntent`); Back/Home on the home screen scrolls up to it.
-- All motion is draw-phase only (`pageAnim` read in `graphicsLayer`): photo layer is screen + 120dp tall and slides up
-  120dp (+3.5% zoom) while the page moves a full screen; the cached offscreen layer is only re-positioned, no re-raster.
-- Big clock = Roboto variable wght 200 at 280sp, lineHeight in the same ratio as the 56/60sp header clock, so scaling
-  by height ratio lands it exactly on the header clock (measured with `boundsInRoot`, before the layer transform).
-  It lands at p=0.82, then crossfades to the header clock (0.84→1): no double image.
-- Cameras are inactive on the clock page (start when the page scrolls down, ~1 s "connecting").
-- Measured: idle on the clock page 0 frames; Down/Up ×8: 2.2% janky, p99 30 ms, GPU p99 14 ms.
-  PSS ~153 MB fresh (GL ~90 MB); Skia's cache grows to ~145 MB GL after long sessions and is trimmed when hidden.
+- Depth (`DepthScene.kt`): `DepthBack` (photo) → `BigClock` → `DepthFront` (the land, cut out of the same photo with a
+  mask via `BlendMode.DstIn`) → date/weather line → UI. Each is a cached offscreen layer; the page scroll only moves
+  them: bg 60dp, clock 80dp, fg 130dp. The fg may only move **up** relative to the bg (it's solid from its skyline
+  down, so it always covers the bg's copy of the land); sideways/down offsets would show a double edge.
+- The clock stays behind the apps on page 1 (alpha 0.6); the apps page carries its own dark gradient (`PanelScrim`).
+- Wallpapers: `tools/wallpapers/make.py` + `wallpapers.json` (Wikimedia Featured Pictures). Depth Anything V2 base
+  (ONNX, CPU) → land = depth > tau, connected to the bottom edge → colour guided filter on the photo → mask.
+  Output: `NN.webp` 1920x1360 (screen + 140dp parallax room) + `NN_fg.webp` (alpha only, from row `fgTop`) + `index.json`.
+  `zoom/x0/y0` put the skyline across the lower ~30% of the digits (scored with the real clock glyphs: Oswald 600,
+  560 px, centre + 20 px at 1080p = `ClockFontSize`/`ClockCenterOffset`). Mixed-depth scenes (forest in front of a
+  far mountain) give inconsistent masks: dropped those.
+- Clock fonts: `assets/fonts` (OFL), subset to digits/colon with `pyftsubset`; sized so every font's digits are as tall
+  as Oswald's. Drawn with a native `Paint` (shadow layer) inside an offscreen layer: re-rasterised once a minute.
+- Measured (2 live cameras): idle 0 frames; Down/Back ×8: 2.5% janky, GPU 9–25 ms during the scroll (bg + clock + fg +
+  panel scrim ≈ 3 screens of fill). PSS ~154 MB (GL ~109 MB).
 - Slowed-down captures: `settings put global animator_duration_scale 10` (then `settings delete`); `screenrecord`
   drops most frames on this device. `pip install imageio-ffmpeg` gives an ffmpeg for frame extraction.
+
+## Screensaver (DreamService, v1.0.17)
+- `screensaver/ClockDream` = system screensaver: `settings put secure screensaver_components
+  com.ohav.tvhome/.screensaver.ClockDream` (Google's was `com.google.android.apps.tv.dreamx/.service.Backdrop`, saved in
+  prefs and restored when ours is turned off). Starts after `system screen_off_timeout` (was 10 min; ours sets 1 min on
+  first run). Device sleeps after `secure sleep_timeout` (20 min). Both need `pm grant ... WRITE_SECURE_SETTINGS` and
+  `appops set ... WRITE_SETTINGS allow` (install script).
+- `cmd dreams start-dreaming` needs root → test by setting the timeout to 1 min and waiting; or Settings → הצג עכשיו
+  (`ScreensaverActivity`, same scene).
+- Compose in a DreamService: the service is its own `LifecycleOwner` + `SavedStateRegistryOwner`, set on the
+  ComposeView and the decor view. RESUMED from `onDreamingStarted`.
+- Drift at ~12 fps (sub-pixel motion doesn't need more): land rises 0–44dp vs sky 0–14dp (90 s), clock wanders ±28dp
+  (240 s) against burn-in. Measured: 125 frames/10 s, 0 janky, GPU 9 ms.
+- Videos keep the screen on: our YouTube sets `FLAG_KEEP_SCREEN_ON` while a `<video>` plays (`playing` message from
+  tvhome.js), cameras always.
 
 ## Performance (measured 2026-10-27, `dumpsys gfxinfo` + `framestats` while pressing DPAD)
 - GPU (PowerVR) is fill-rate bound: each full-screen translucent pass costs ~5 ms. Wallpaper/backdrop + scrims live in

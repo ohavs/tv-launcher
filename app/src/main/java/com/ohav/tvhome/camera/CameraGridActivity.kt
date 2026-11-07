@@ -37,6 +37,8 @@ class CameraGridActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Watching cameras is like watching video: no screensaver.
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         mainUrls = intent.getStringArrayListExtra(EXTRA_MAIN).orEmpty()
         subUrls = intent.getStringArrayListExtra(EXTRA_SUB).orEmpty()
         channels = intent.getIntArrayExtra(EXTRA_CHANNELS)?.toList().orEmpty()

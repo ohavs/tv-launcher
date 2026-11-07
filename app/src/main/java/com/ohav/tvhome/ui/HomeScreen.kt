@@ -61,6 +61,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -108,8 +109,10 @@ private val WidgetHeight = 90.dp
 private val ClassicOrder = listOf(Section.Top, Section.Widgets, Section.Apps, Section.Content)
 private val CinemaOrder = listOf(Section.Top, Section.Widgets, Section.Content, Section.Apps)
 private val ClockOrder = listOf(Section.Top, Section.Hero, Section.Widgets, Section.Apps, Section.Content)
-/** Clock layout: how far the photo moves while the page scrolls a whole screen (parallax). */
-private val Parallax = 120.dp
+/** Clock layout parallax: how far each depth layer rises while the page scrolls down a whole screen. */
+private val BgShift = 60.dp
+private val ClockShift = 80.dp
+private val FgShift = 130.dp
 
 private val ClassicScrim = Brush.verticalGradient(
     0f to Color.Black.copy(alpha = 0.50f),
@@ -119,24 +122,14 @@ private val ClassicScrim = Brush.verticalGradient(
     1f to Color.Black.copy(alpha = 0.94f),
 )
 
-/**
- * Scrim over the clock layout's tall photo layer (screen + [Parallax]). Stops are in screen heights from the
- * layer's top: the clock page sees 0..1, the apps page (layer moved up by Parallax) sees p..1+p, where it
- * matches [ClassicScrim].
- */
-private fun clockScrim(screenH: Dp): Brush {
-    val p = Parallax / screenH
-    val total = 1f + p
-    fun at(y: Float) = y / total
-    return Brush.verticalGradient(
-        0f to Color.Black.copy(alpha = 0.30f),
-        at(p) to Color.Black.copy(alpha = 0.44f),
-        at(p + 0.24f) to Color.Black.copy(alpha = 0.14f),
-        at(p + 0.40f) to Color.Black.copy(alpha = 0.30f),
-        at(p + 0.62f) to Color.Black.copy(alpha = 0.80f),
-        1f to Color.Black.copy(alpha = 0.94f),
-    )
-}
+/** Clock layout: the apps page's own shade, rising with it over the photo and the big clock. */
+private val PanelScrim = Brush.verticalGradient(
+    0f to Color.Transparent,
+    0.15f to Color.Black.copy(alpha = 0.38f),
+    0.5f to Color.Black.copy(alpha = 0.62f),
+    0.8f to Color.Black.copy(alpha = 0.88f),
+    1f to Color.Black.copy(alpha = 0.94f),
+)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -181,8 +174,6 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
     /** Clock layout: 0 = the big clock, 1 = the apps page. Follows focus; read only while drawing. */
     var page by remember { mutableIntStateOf(0) }
     val pageAnim = remember { Animatable(0f) }
-    /** The header clock's bounds, where the big clock lands. */
-    var headerTime by remember { mutableStateOf<Rect?>(null) }
 
     val topIds = listOf("top:all", "top:cc", "top:settings")
     val cams = home.camera
@@ -298,27 +289,57 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                 translationY = (1f - p) * 22.dp.toPx()
             }
 
+            if (clock) {
+                // Depth: photo -> big clock -> the land in front of it, each rising at its own speed (parallax).
+                Isolated {
+                    val wp by rememberWallpaper(withMask = true) { home.prefs.wallpaperMinutes }
+                    fun GraphicsLayerScope.enterScale() {
+                        val s = 1.06f - 0.06f * EaseOut.transform(enter.value)
+                        scaleX = s
+                        scaleY = s
+                    }
+                    DepthBack(wp, home.quiet, Modifier.graphicsLayer {
+                        enterScale()
+                        translationY = -pageAnim.value * BgShift.toPx()
+                    })
+                    BigClock(home.clockFont) {
+                        val p = pageAnim.value
+                        val e = staggerP(0)
+                        translationY = -p * ClockShift.toPx() + (1f - e) * 26.dp.toPx()
+                        alpha = e * (1f - 0.4f * p)
+                    }
+                    DepthFront(wp, home.quiet, Modifier.graphicsLayer {
+                        enterScale()
+                        translationY = -pageAnim.value * FgShift.toPx()
+                    })
+                }
+                ClockInfo(home.weather, cityOf(home.prefs.cityId)) {
+                    val p = pageAnim.value
+                    val e = staggerP(0)
+                    alpha = (1f - ramp(p, 0f, 0.3f)) * ramp(e, 0.25f, 1f)
+                    translationY = -p * 2f * ClockShift.toPx() + (1f - e) * 20.dp.toPx()
+                }
+                MoreBelow { (1f - ramp(pageAnim.value, 0f, 0.2f)) * ramp(enter.value, 0.5f, 1f) }
+                Box(
+                    Modifier
+                        .align(Alignment.Center)
+                        .size(1.dp)
+                        .focusRequester(req("hero"))
+                        .onFocusChanged { if (it.isFocused) onFocused(Section.Hero, 0) }
+                        .onKeyEvent {
+                            if (!it.isSelect()) return@onKeyEvent false
+                            if (it.type == KeyEventType.KeyUp) focus(Section.Apps)
+                            true
+                        }
+                        .focusable()
+                )
+            } else {
             // The photo and its scrims are cached in one offscreen layer: one full-screen pass per frame
             // instead of four (the GPU is fill-rate bound), redrawn only when the picture changes.
-            // Clock layout: the layer is taller than the screen and slides up a little as the page scrolls (parallax).
-            // Moving a cached layer costs nothing extra: it's still one textured pass.
             Box(
                 Modifier
-                    .fillMaxWidth()
-                    .then(
-                        if (clock) Modifier.wrapContentHeight(Alignment.Top, unbounded = true).height(screenH + Parallax)
-                        else Modifier.fillMaxHeight()
-                    )
-                    .graphicsLayer {
-                        compositingStrategy = CompositingStrategy.Offscreen
-                        if (clock) {
-                            val p = pageAnim.value
-                            translationY = -p * Parallax.toPx()
-                            val s = 1f + 0.035f * p
-                            scaleX = s
-                            scaleY = s
-                        }
-                    }
+                    .fillMaxSize()
+                    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
                     .background(Color.Black)
             ) {
             if (cinema) Isolated {
@@ -334,7 +355,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                 scaleX = s
                 scaleY = s
             })
-            Box(Modifier.fillMaxSize().background(if (clock) clockScrim(screenH) else ClassicScrim))
+            Box(Modifier.fillMaxSize().background(ClassicScrim))
             Box(
                 Modifier.fillMaxSize().background(
                     Brush.horizontalGradient(
@@ -345,43 +366,17 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
             )
             }
             }
-
-            if (clock) {
-                HeroClock(
-                    home.weather, cityOf(home.prefs.cityId),
-                    page = { pageAnim.value },
-                    enter = { staggerP(0) },
-                    target = { headerTime },
-                )
-                Box(
-                    Modifier
-                        .align(Alignment.Center)
-                        .size(1.dp)
-                        .focusRequester(req("hero"))
-                        .onFocusChanged { if (it.isFocused) onFocused(Section.Hero, 0) }
-                        .onKeyEvent {
-                            if (!it.isSelect()) return@onKeyEvent false
-                            if (it.type == KeyEventType.KeyUp) focus(Section.Apps)
-                            true
-                        }
-                        .focusable()
-                )
             }
 
             Column(Modifier.fillMaxSize().padding(top = 30.dp)) {
                 Box(Modifier.fillMaxWidth().padding(horizontal = sidePad)) {
                     if (clock) {
-                        // Hidden on the big-clock page; the big clock shrinks into it on the way down.
+                        // Date and weather join the header on the apps page; the big clock stays behind the apps.
                         ClockBlock(
                             home.weather, cityOf(home.prefs.cityId), Modifier.align(Alignment.CenterStart),
-                            timeModifier = Modifier
-                                .onGloballyPositioned { headerTime = it.boundsInRoot() }
-                                .graphicsLayer {
-                                    alpha = ramp(pageAnim.value, HANDOVER, 1f)
-                                    compositingStrategy = CompositingStrategy.ModulateAlpha
-                                },
+                            showTime = false,
                             infoModifier = Modifier.graphicsLayer {
-                                val p = ramp(pageAnim.value, 0.8f, 1f)
+                                val p = ramp(pageAnim.value, 0.55f, 1f)
                                 alpha = p * staggerP(0)
                                 translationY = (1f - p) * 10.dp.toPx()
                                 compositingStrategy = CompositingStrategy.ModulateAlpha
@@ -400,7 +395,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                 // Clock layout: everything below the header is the second page, a screen further down.
                 Column(
                     Modifier.weight(1f).then(
-                        if (clock) Modifier.graphicsLayer { translationY = (1f - pageAnim.value) * screenH.toPx() }
+                        if (clock) Modifier.graphicsLayer { translationY = (1f - pageAnim.value) * screenH.toPx() }.background(PanelScrim)
                         else Modifier
                     )
                 ) {

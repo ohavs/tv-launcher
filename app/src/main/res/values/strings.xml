@@ -96,4 +96,11 @@
     <string name="wallpaper_every">Change wallpaper</string>
     <string name="every_min">Every %1$d min</string>
     <string name="never">Never</string>
+    <string name="clock_font">Clock font</string>
+    <string name="screensaver">Screensaver</string>
+    <string name="screensaver_ours">Our screensaver (clock and photo)</string>
+    <string name="screensaver_after">Starts after</string>
+    <string name="after_min">%1$d min idle</string>
+    <string name="screensaver_preview">Show now</string>
+    <string name="screensaver_needs_adb">No permission to change system settings. Run install-launcher.cmd again from the PC.</string>
 </resources>

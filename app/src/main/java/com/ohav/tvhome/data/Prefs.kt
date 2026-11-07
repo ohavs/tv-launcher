@@ -58,6 +58,26 @@ class Prefs(context: Context) {
         get() = sp.getInt("wallpaperMin", 5)
         set(v) = sp.edit().putInt("wallpaperMin", v).apply()
 
+    /** Big clock typeface (`ClockFont` name). */
+    var clockFont: String
+        get() = sp.getString("clockFont", "Oswald")!!
+        set(v) = sp.edit().putString("clockFont", v).apply()
+
+    /** Our screensaver replaces the system one (needs WRITE_SECURE_SETTINGS, granted over adb). */
+    var screensaver: Boolean
+        get() = sp.getBoolean("screensaver", false)
+        set(v) = sp.edit().putBoolean("screensaver", v).apply()
+
+    /** Ours was made the system screensaver once (1 minute); after that only Settings changes it. */
+    var screensaverSetup: Boolean
+        get() = sp.getBoolean("saverSetup", false)
+        set(v) = sp.edit().putBoolean("saverSetup", v).apply()
+
+    /** The system screensaver before ours, restored when ours is turned off. */
+    var previousDream: String?
+        get() = sp.getString("prevDream", null)
+        set(v) = sp.edit().putString("prevDream", v).apply()
+
     /** App a remote button opens (short press). */
     fun keyTarget(key: RemoteKey): String = sp.getString("key_${key.name}", null) ?: key.defaultPackage
     fun setKeyTarget(key: RemoteKey, pkg: String) = sp.edit().putString("key_${key.name}", pkg).apply()
@@ -103,6 +123,7 @@ class Prefs(context: Context) {
     companion object {
         const val QUIET = "quiet"
         val WALLPAPER_CHOICES = listOf(1, 5, 15, 30, 60, 0)
+        val SCREENSAVER_CHOICES = listOf(1, 2, 5, 10, 15, 30)
 
         private val FAVORITES = listOf(
             "com.netflix.ninja",

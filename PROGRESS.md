@@ -1,16 +1,26 @@
 # PROGRESS
 
 ## Now
-- Live: **TV Home v1.0.16** on the TV (Google TV Streamer, `10.0.0.43:5555`). Repo https://github.com/ohavs/tv-launcher (public).
-- **Next: ROADMAP שלב L2b** (smart dashboard) → then 10 → G (Google Photos/Drive) → 9 → L3 → phone. `docs/ROADMAP.md`.
+- Live: **TV Home v1.0.17** on the TV (Google TV Streamer, `10.0.0.43:5555`). Repo https://github.com/ohavs/tv-launcher (public).
+- **Next: ROADMAP שלב L2b** (smart dashboard) → then 10 → G (Google Photos/Drive) → 9 → L3 → P (parking/cars) → phone.
 - L4 confirmed by user (2026-11-07): signed in, no ads in the account.
-- TV is set to: layout **Clock** (big clock + parallax), cameras primary = channel 2.
+- TV is set to: layout **Clock**, font Oswald, **our screensaver after 1 min**, cameras primary = channel 2.
 
-## Last session (2026-11-07, later) — big clock + parallax (design, before L2b)
+## Last session (2026-11-07, evening) — depth clock + screensaver (stage 6c)
+- User: clock font bolder; clock always in the middle *behind* the apps and partly hidden behind the photo (real
+  parallax); screensaver after 1 min idle (configurable) = big clock behind parallax photos; parking/cars idea → future.
+- User choices: condensed bold font (default Oswald, + Bebas/Anton/Big Shoulders in Settings); screensaver system-wide;
+  clock + date + weather; nature photos.
+- Built: 17 depth wallpapers (`tools/wallpapers/make.py`, Depth Anything V2 masks), `DepthScene.kt`, `ClockDream`
+  (DreamService) + preview activity, Settings (font, screensaver on/off, 1–30 min, show now), YouTube/cameras keep
+  the screen on while playing.
+- Verified on TV: depth on clock page + apps page, fonts, dream started after 1 min idle (0 janky, 12 fps), key wakes
+  it back to Home, preview from Settings. Not tested: YouTube playback holding off the dream (needed a profile pick).
+- Parking/cars: feasibility written in ROADMAP שלב P (presence: high; *my* cars: medium, via plate at arrival).
+
+## Session before (2026-11-07, later) — big clock + parallax (design, before L2b)
 - User choices: Home opens on a full-screen clock; thin & huge; the clock shrinks into the header when scrolling to apps.
 - New layout `Clock` (default; Classic/Cinema kept). Photo slides up a little (parallax) while the page scrolls.
-- Verified on TV: clock page, Down → apps, Up/Back → clock, Home from another app → clock, Google Home button,
-  idle 0 frames, transitions 2.2% janky. Details: DEV-NOTES "Clock layout".
 
 ## Session before (2026-11-07) — stage 6 (TV part)
 - User choices: control center opens by long-press Netflix + dashboard button; sleep timer = full off (CEC);

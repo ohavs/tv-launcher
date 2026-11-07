@@ -1,5 +1,6 @@
 package com.ohav.tvhome
 
+import com.ohav.tvhome.screensaver.Screensaver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -35,6 +36,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         home = HomeController(this)
+        Screensaver.setupOnce(this)
         onBackPressedDispatcher.addCallback(this) { home.homeSignal++ }
         ContextCompat.registerReceiver(
             this,

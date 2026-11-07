@@ -96,4 +96,11 @@
     <string name="wallpaper_every">החלפת רקע</string>
     <string name="every_min">כל %1$d דק׳</string>
     <string name="never">בלי החלפה</string>
+    <string name="clock_font">גופן השעון</string>
+    <string name="screensaver">שומר מסך</string>
+    <string name="screensaver_ours">שומר המסך שלנו (שעון ותמונה)</string>
+    <string name="screensaver_after">מתחיל אחרי</string>
+    <string name="after_min">%1$d דק׳ בלי לחיצה</string>
+    <string name="screensaver_preview">הצג עכשיו</string>
+    <string name="screensaver_needs_adb">אין הרשאה לשנות הגדרות מערכת. צריך להריץ שוב את install-launcher.cmd מהמחשב.</string>
 </resources>

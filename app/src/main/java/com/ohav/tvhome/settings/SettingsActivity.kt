@@ -40,7 +40,10 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.ohav.tvhome.BuildConfig
 import com.ohav.tvhome.R
 import com.ohav.tvhome.HomeKeyService
-import com.ohav.tvhome.ui.WALLPAPERS
+import com.ohav.tvhome.data.Wallpapers
+import com.ohav.tvhome.screensaver.Screensaver
+import com.ohav.tvhome.screensaver.ScreensaverActivity
+import com.ohav.tvhome.ui.ClockFont
 import com.ohav.tvhome.data.AppRepository
 import com.ohav.tvhome.data.CameraPrefs
 import com.ohav.tvhome.data.HomeLayout
@@ -95,6 +98,10 @@ private fun SettingsScreen() {
     var sponsorBlock by remember { mutableStateOf(prefs.sponsorBlock) }
     var wallpaperMin by remember { mutableStateOf(prefs.wallpaperMinutes) }
     var quiet by remember { mutableStateOf(prefs.quiet) }
+    var clockFont by remember { mutableStateOf(ClockFont.of(prefs.clockFont)) }
+    var saverOn by remember { mutableStateOf(Screensaver.isOurs(context)) }
+    var saverMin by remember { mutableStateOf(Screensaver.minutes(context)) }
+    var saverError by remember { mutableStateOf(false) }
     var keyTargets by remember { mutableStateOf(RemoteKey.entries.associateWith { prefs.keyTarget(it) }) }
     var pickingKey by remember { mutableStateOf<RemoteKey?>(null) }
     val cams = remember { CameraPrefs(context) }
@@ -268,6 +275,10 @@ private fun SettingsScreen() {
                         wallpaperMin = choices[(choices.indexOf(wallpaperMin) + 1) % choices.size]
                         prefs.wallpaperMinutes = wallpaperMin
                     }
+                    MenuRow(stringResource(R.string.clock_font), value = clockFont.name) {
+                        clockFont = ClockFont.entries[(clockFont.ordinal + 1) % ClockFont.entries.size]
+                        prefs.clockFont = clockFont.name
+                    }
                     MenuRow(stringResource(R.string.quiet_mode), value = stringResource(if (quiet) R.string.on else R.string.off)) {
                         quiet = !quiet
                         prefs.quiet = quiet
@@ -276,6 +287,28 @@ private fun SettingsScreen() {
                         stringResource(R.string.media_access),
                         value = stringResource(if (mediaAccess) R.string.allowed else R.string.not_allowed),
                     ) { }
+
+                    SectionTitle(stringResource(R.string.screensaver))
+                    MenuRow(
+                        stringResource(R.string.screensaver_ours),
+                        value = stringResource(if (saverOn) R.string.on else R.string.off),
+                    ) {
+                        if (Screensaver.use(context, !saverOn)) saverOn = !saverOn else saverError = true
+                    }
+                    MenuRow(stringResource(R.string.screensaver_after), value = stringResource(R.string.after_min, saverMin)) {
+                        val choices = Prefs.SCREENSAVER_CHOICES
+                        val next = choices.firstOrNull { it > saverMin } ?: choices.first()
+                        if (Screensaver.setMinutes(context, next)) saverMin = next else saverError = true
+                    }
+                    MenuRow(stringResource(R.string.screensaver_preview)) {
+                        context.startActivity(Intent(context, ScreensaverActivity::class.java))
+                    }
+                    if (saverError) {
+                        Text(
+                            stringResource(R.string.screensaver_needs_adb),
+                            color = Color(0xFFFFB4A9), fontSize = 15.sp, modifier = Modifier.padding(start = 6.dp, bottom = 8.dp),
+                        )
+                    }
 
                     SectionTitle(stringResource(R.string.youtube))
                     MenuRow(stringResource(R.string.yt_own), value = stringResource(if (ownYouTube) R.string.on else R.string.off)) {
@@ -373,7 +406,7 @@ private fun SettingsScreen() {
                     SectionTitle(stringResource(R.string.credits))
                     MenuRow(stringResource(R.string.credits), value = if (showCredits) "▲" else "▼") { showCredits = !showCredits }
                     if (showCredits) {
-                        WALLPAPERS.forEach {
+                        Wallpapers.all(context).forEach {
                             Text("${it.title} — ${it.credit}", color = Color.White.copy(alpha = 0.6f), fontSize = 15.sp, modifier = Modifier.padding(start = 6.dp))
                         }
                         Text("Wikimedia Commons", color = Color.White.copy(alpha = 0.4f), fontSize = 14.sp, modifier = Modifier.padding(start = 6.dp, bottom = 40.dp))

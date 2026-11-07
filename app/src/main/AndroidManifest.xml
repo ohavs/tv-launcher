@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
@@ -9,6 +10,9 @@
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="com.android.providers.tv.permission.READ_EPG_DATA" />
     <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
+    <!-- Our screensaver + its timeout (system settings). Granted over adb by install-launcher.cmd. -->
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" tools:ignore="ProtectedPermissions" />
 
     <queries>
         <intent>
@@ -116,6 +120,25 @@
             android:process=":yt"
             android:screenOrientation="landscape"
             android:taskAffinity="com.ohav.tvhome.youtube"
+            android:theme="@style/Theme.TvHome" />
+
+        <!-- Screensaver: big clock behind the photo's foreground. -->
+        <service
+            android:name=".screensaver.ClockDream"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_DREAM_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.dreams.DreamService" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
+
+        <activity
+            android:name=".screensaver.ScreensaverActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode|density|locale|layoutDirection"
+            android:exported="false"
+            android:screenOrientation="landscape"
             android:theme="@style/Theme.TvHome" />
 
         <receiver

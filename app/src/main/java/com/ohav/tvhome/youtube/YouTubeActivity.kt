@@ -145,6 +145,10 @@ class YouTubeActivity : ComponentActivity() {
             "skipped" -> showToast(
                 getString(if (m.optString("c") == "selfpromo") R.string.yt_skipped_selfpromo else R.string.yt_skipped_sponsor)
             )
+            "playing" -> {
+                val flag = android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                if (m.optBoolean("on")) window.addFlags(flag) else window.clearFlags(flag)
+            }
             "exit" -> finish()
         }
     }
