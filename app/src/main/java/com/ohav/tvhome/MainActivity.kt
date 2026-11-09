@@ -84,6 +84,13 @@ class MainActivity : ComponentActivity() {
         super.onStop()
     }
 
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        // This process never becomes cached (the accessibility service lives here), so give back what the
+        // hidden UI can rebuild: thumbnails beyond the row shown last.
+        if (level >= TRIM_MEMORY_UI_HIDDEN) com.ohav.tvhome.data.ImageLoader.trim()
+    }
+
     override fun onResume() {
         super.onResume()
         // Catches installs/removals missed while another app was in front.

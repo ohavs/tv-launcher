@@ -120,8 +120,12 @@ fun CameraCard(
             awaitCancellation()
         } finally {
             view.release = null
-            withContext(NonCancellable + Dispatchers.IO) { runCatching { link.player.stop(slot) } }
-            link.close()
+            // close() inside: a dispatcher-changing withContext rethrows the cancellation when it returns
+            // (prompt cancellation), so code after it never ran and every card leaked a binding.
+            withContext(NonCancellable + Dispatchers.IO) {
+                runCatching { link.player.stop(slot) }
+                link.close()
+            }
         }
     }
 

@@ -162,6 +162,15 @@
   pass); the cameras made no difference (an earlier "kill :camera → fast" was GPU DVFS noise: the same frames
   measure 12–35 ms depending on the GPU clock, so compare A/B back to back).
 
+- Stage 10 (2026-11-09, v1.0.20): main PSS ~165 MB in front (Graphics ~90 MB, mostly Skia scratch render targets —
+  purgeable, cache cap ~100 MB, grows to ~130 MB after hours), ~83 MB behind another app. The process never becomes
+  cached (accessibility service) → `onTrimMemory(UI_HIDDEN)` trims what the UI can rebuild.
+- **Coroutine gotcha:** `finally { withContext(NonCancellable + Dispatchers.IO) { a() }; b() }` — `b()` never runs: a
+  dispatcher-changing `withContext` resumes with prompt cancellation and rethrows. Put `b()` inside the block.
+  Check camera bindings: `dumpsys activity services com.ohav.tvhome/.camera.CameraService | grep -o "ConnectionRecord{[0-9a-f]*" | sort -u | wc -l`
+  (each record is printed 3×); on the apps page = 3 (2 cards + motion), behind another app = 0.
+- A composable lambda called from two call sites (`if (x) { a(); b() } else b()`) is recreated when `x` flips; keep one call site.
+
 ## Control center / overlays (stage 6)
 - Remote has no spare buttons (keylayout: POWER, ASSIST, D-pad, BACK, HOME, volume/mute, MACRO_1, BUTTON_3 YouTube,
   BUTTON_4 Netflix). Control center = long press Netflix (600 ms, `HomeKeyService`) or the sliders circle on the dashboard.

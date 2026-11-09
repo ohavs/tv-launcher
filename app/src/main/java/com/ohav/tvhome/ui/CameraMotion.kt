@@ -61,8 +61,10 @@ fun rememberCameraMotion(config: CameraConfig?, active: Boolean): State<List<Int
             awaitCancellation()
         } finally {
             alive = false
-            withContext(NonCancellable + Dispatchers.IO) { runCatching { link.player.stopMotion() } }
-            link.close()
+            withContext(NonCancellable + Dispatchers.IO) {
+                runCatching { link.player.stopMotion() }
+                link.close() // inside: see CameraCard
+            }
         }
     }
     return moving

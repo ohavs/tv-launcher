@@ -1,12 +1,20 @@
 # PROGRESS
 
 ## Now
-- Live: **TV Home v1.0.19** on the TV (Google TV Streamer, `10.0.0.43:5555`). Repo https://github.com/ohavs/tv-launcher (public).
-- **Next: ROADMAP שלב 10** (polish/perf) → G (Google Photos/Drive) → 9 → L3 → P (parking/cars) → phone. → G (Google Photos/Drive) → 9 → L3 → P (parking/cars) → phone.
+- Live: **TV Home v1.0.20** on the TV (Google TV Streamer, `10.0.0.43:5555`). Repo https://github.com/ohavs/tv-launcher (public).
+- **Next: ROADMAP שלב G** (Google Photos/Drive) → 9 → L3 → phone. Stage P dropped by user (2026-11-09); dashboard motion stays.
 - L4 confirmed by user (2026-11-07): signed in, no ads in the account.
 - TV is set to: layout **Clock**, font Oswald, **our screensaver after 1 min**, photo every 1 min, cameras primary = channel 2.
 
-## Last session (2026-11-09, evening) — L2b smart dashboard
+## Last session (2026-11-09, night) — stage 10 polish/perf
+- User: dropped parking/cars (P); keeps motion → camera jumps first ("useful"). Asked about phone alerts → advised an
+  always-on box + Frigate, not the TV (sleeps when off, weak CPU) — user dropped the idea.
+- Measured on TV: apps row + clock↔apps transition at 60 fps, idle 0 frames. Found a camera binding leak (every motion /
+  screensaver swap left a binding: `withContext(NonCancellable + IO)` rethrows on return, `close()` after it never ran)
+  → `:camera` pinned at adj 100 forever. Fixed; background: main 112 → 83 MB, `:camera` cached (adj 905).
+- Thumbnails trimmed to ~4 MB on UI_HIDDEN; camera cards no longer reconnect when "now playing first" flips.
+
+## Session before (2026-11-09, evening) — L2b smart dashboard
 - Google Home APIs don't work on the Streamer (`Home.Permissions.API is not available`) → devices only via phone (stage 3).
   Fallback (user's choice): Google Home card opens the built-in panel; shown when no track (no room).
 - Context order: camera with motion → first slot + "תנועה" badge (cards keyed by channel); playing track → first.

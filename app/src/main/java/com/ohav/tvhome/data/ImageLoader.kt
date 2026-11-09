@@ -23,6 +23,9 @@ object ImageLoader {
 
     private fun key(uri: String, maxWidth: Int) = "$maxWidth|$uri"
 
+    /** Keeps only the most recently used artwork (about one row). */
+    fun trim() = cache.trimToSize(4 * 1024 * 1024)
+
     fun cached(uri: String, maxWidth: Int): ImageBitmap? = cache.get(key(uri, maxWidth))
 
     suspend fun load(context: Context, uri: String, maxWidth: Int): ImageBitmap? {

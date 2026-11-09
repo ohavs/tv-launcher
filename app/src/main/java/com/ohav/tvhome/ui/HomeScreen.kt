@@ -476,7 +476,9 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                                 PlayPauseButton(track.playing, req("w:pp"), { onFocused(Section.Widgets, iPp) }, home.nowPlaying::playPause)
                             }
                         }
-                        if (playingFirst) { nowGroup(); camGroup() } else camGroup()
+                        // camGroup has one call site, so the cameras keep streaming when the order flips.
+                        if (playingFirst) nowGroup()
+                        camGroup()
                         Spacer(Modifier.weight(1f))
                         if (!playingFirst) nowGroup()
                         if (showSmartHome) {
