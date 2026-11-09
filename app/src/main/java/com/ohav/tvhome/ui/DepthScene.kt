@@ -18,8 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.GraphicsLayerScope
@@ -30,16 +28,15 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.ohav.tvhome.data.Shade
 import com.ohav.tvhome.data.WallpaperImages
 import com.ohav.tvhome.data.Wallpapers
-import kotlin.math.roundToInt
 
 /*
- * Depth effect: background photo → clock → foreground (the land, cut out of the same photo with a mask).
- * Each layer is cached offscreen; parallax moves them at different speeds in the draw phase only.
+ * Depth effect: background photo -> clock -> foreground (the land, cut out of the same photo with a mask).
+ * Both pictures are baked when decoded (shade included), so each is one plain bitmap draw: the background is opaque
+ * (no blending), the foreground only covers the rows from its skyline down. Parallax moves them in the draw phase.
  * The foreground may only move *up* relative to the background: it is solid from its skyline down, so it always
  * covers the background's copy of the land (sideways or downward offsets would show a double edge).
  */
@@ -55,8 +52,8 @@ fun Modifier.depthLayer() = fillMaxWidth()
     .wrapContentHeight(Alignment.Top, unbounded = true)
     .aspectRatio(Wallpapers.SRC_W.toFloat() / Wallpapers.LAYER_H)
 
-/** A light shade, in layer coordinates, baked into both layers: header legibility on top, a little depth below. */
-val DepthScrim = Brush.verticalGradient(
+/** A light shade, in layer coordinates, baked into both pictures: header legibility on top, a little depth below. */
+val DepthShade = Shade(
     0f to Color.Black.copy(alpha = 0.34f),
     0.16f to Color.Black.copy(alpha = 0.06f),
     0.55f to Color.Transparent,
@@ -64,43 +61,24 @@ val DepthScrim = Brush.verticalGradient(
 )
 
 @Composable
-fun DepthBack(images: WallpaperImages?, quiet: Boolean, modifier: Modifier = Modifier, scrim: Brush? = DepthScrim) {
-    Box(
-        modifier
-            .depthLayer()
-            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-            .background(Color(0xFF0B0D12))
-    ) {
+fun DepthBack(images: WallpaperImages?, quiet: Boolean, modifier: Modifier = Modifier) {
+    Box(modifier.depthLayer().background(Color(0xFF0B0D12))) {
         Crossfade(targetState = images, animationSpec = tween(if (quiet) 0 else FADE_MS), label = "bg") { img ->
             if (img != null) Image(img.bg, null, contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxSize())
         }
-        if (scrim != null) Box(Modifier.fillMaxSize().background(scrim))
     }
 }
 
 @Composable
-fun DepthFront(images: WallpaperImages?, quiet: Boolean, modifier: Modifier = Modifier, scrim: Brush? = DepthScrim) {
+fun DepthFront(images: WallpaperImages?, quiet: Boolean, modifier: Modifier = Modifier) {
     Box(modifier.depthLayer()) {
         Crossfade(targetState = images, animationSpec = tween(if (quiet) 0 else FADE_MS), label = "fg") { img ->
-            val mask = img?.mask ?: return@Crossfade
-            Canvas(
-                Modifier
-                    .fillMaxSize()
-                    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-            ) {
-                val top = img.wallpaper.fgTop
-                val s = size.width / img.bg.width
-                val dstTop = (top * s).roundToInt()
-                val dst = IntSize(size.width.roundToInt(), size.height.roundToInt() - dstTop)
-                drawImage(
-                    img.bg,
-                    srcOffset = IntOffset(0, top),
-                    srcSize = IntSize(img.bg.width, img.bg.height - top),
-                    dstOffset = IntOffset(0, dstTop),
-                    dstSize = dst,
+            val fg = img?.fg ?: return@Crossfade
+            Box(Modifier.fillMaxSize()) {
+                Image(
+                    fg, null, contentScale = ContentScale.FillBounds,
+                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().aspectRatio(fg.width.toFloat() / fg.height),
                 )
-                drawImage(mask, dstOffset = IntOffset(0, dstTop), dstSize = dst, blendMode = BlendMode.DstIn)
-                if (scrim != null) drawRect(scrim, blendMode = BlendMode.SrcAtop)
             }
         }
     }

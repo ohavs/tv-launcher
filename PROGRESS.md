@@ -1,22 +1,26 @@
 # PROGRESS
 
 ## Now
-- Live: **TV Home v1.0.17** on the TV (Google TV Streamer, `10.0.0.43:5555`). Repo https://github.com/ohavs/tv-launcher (public).
+- Live: **TV Home v1.0.18** on the TV (Google TV Streamer, `10.0.0.43:5555`). Repo https://github.com/ohavs/tv-launcher (public).
 - **Next: ROADMAP שלב L2b** (smart dashboard) → then 10 → G (Google Photos/Drive) → 9 → L3 → P (parking/cars) → phone.
 - L4 confirmed by user (2026-11-07): signed in, no ads in the account.
-- TV is set to: layout **Clock**, font Oswald, **our screensaver after 1 min**, cameras primary = channel 2.
+- TV is set to: layout **Clock**, font Oswald, **our screensaver after 1 min**, photo every 1 min, cameras primary = channel 2.
 
-## Last session (2026-11-07, evening) — depth clock + screensaver (stage 6c)
-- User: clock font bolder; clock always in the middle *behind* the apps and partly hidden behind the photo (real
-  parallax); screensaver after 1 min idle (configurable) = big clock behind parallax photos; parking/cars idea → future.
-- User choices: condensed bold font (default Oswald, + Bebas/Anton/Big Shoulders in Settings); screensaver system-wide;
-  clock + date + weather; nature photos.
-- Built: 17 depth wallpapers (`tools/wallpapers/make.py`, Depth Anything V2 masks), `DepthScene.kt`, `ClockDream`
-  (DreamService) + preview activity, Settings (font, screensaver on/off, 1–30 min, show now), YouTube/cameras keep
-  the screen on while playing.
-- Verified on TV: depth on clock page + apps page, fonts, dream started after 1 min idle (0 janky, 12 fps), key wakes
-  it back to Home, preview from Settings. Not tested: YouTube playback holding off the dream (needed a profile pick).
-- Parking/cars: feasibility written in ROADMAP שלב P (presence: high; *my* cars: medium, via plate at arrival).
+## Last session (2026-11-09) — performance + screensaver upgrade (stage 6d)
+- User: Down from the big clock felt laggy ("performance first, always"); land hid too much of the clock;
+  parallax too slow (home transition + screensaver); screensaver: "now playing" from Spotify + photo interval setting.
+- User choices: now playing = what plays on the TV (MediaSession, no Spotify login); per-digit cap ~25%; both parallaxes faster.
+- Found (part-by-part A/B on the TV): apps page = photo layer + land layer + panel shade, each a full-screen blended pass →
+  GPU 34 ms/frame. Cameras were *not* the cause (earlier hint was GPU-clock noise). Fixed: baked bitmaps + one cached
+  layer while the page rests → ~14 ms (60 fps). Transition spring 110 → 300, shifts 36/96/140dp.
+- Wallpapers: `tools/wallpapers/place.py` re-placed every photo (cap 25% per digit incl. screensaver motion);
+  4 dropped (Flatirons, Lake Mystery, Passo Pordoi, Watzmann) → 13 photos. Before: up to 100% of a digit hidden.
+- Screensaver: now-playing card (only while playing), photo every 15 s–5 min (default 1 min), 36 s drift, 20 fps (GPU 8 ms).
+- Verified on TV: frame stats, clock/apps pages, screensaver started by itself with the card (test build showing a
+  paused track). Not seen: the card with real playback (didn't start music on the TV).
+
+## Session before (2026-11-07, evening) — depth clock + screensaver (stage 6c)
+- Built depth wallpapers (Depth Anything V2 masks), `DepthScene.kt`, `ClockDream` (DreamService), font choice, screensaver settings.
 
 ## Session before (2026-11-07, later) — big clock + parallax (design, before L2b)
 - User choices: Home opens on a full-screen clock; thin & huge; the clock shrinks into the header when scrolling to apps.

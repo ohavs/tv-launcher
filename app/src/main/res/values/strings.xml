@@ -101,6 +101,8 @@
     <string name="screensaver_ours">Our screensaver (clock and photo)</string>
     <string name="screensaver_after">Starts after</string>
     <string name="after_min">%1$d min idle</string>
+    <string name="saver_photo_every">Next photo</string>
+    <string name="every_sec">Every %1$d sec</string>
     <string name="screensaver_preview">Show now</string>
     <string name="screensaver_needs_adb">No permission to change system settings. Run install-launcher.cmd again from the PC.</string>
 </resources>

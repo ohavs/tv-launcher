@@ -95,16 +95,23 @@
   classic layout over it. Focus decides the page (`Section.Hero` → 0, Widgets/Apps/Content → 1, Top keeps it);
   Down from the clock → apps, Up from cameras → clock. Home (from another app) snaps to the clock
   (`homeSnap` = `!hasWindowFocus()` in `onNewIntent`); Back/Home on the home screen scrolls up to it.
-- Depth (`DepthScene.kt`): `DepthBack` (photo) → `BigClock` → `DepthFront` (the land, cut out of the same photo with a
-  mask via `BlendMode.DstIn`) → date/weather line → UI. Each is a cached offscreen layer; the page scroll only moves
-  them: bg 60dp, clock 80dp, fg 130dp. The fg may only move **up** relative to the bg (it's solid from its skyline
-  down, so it always covers the bg's copy of the land); sideways/down offsets would show a double edge.
+- Depth (`DepthScene.kt`): `DepthBack` (photo) → `BigClock` → `DepthFront` (the land) → date/weather line → UI.
+  `Wallpapers.decode` bakes them once per photo: the shade (`Shade`) drawn into the photo (opaque → drawn without
+  blending), and the land = photo rows from `fgTop` × mask (DST_IN), both copied to HARDWARE bitmaps. So each is one
+  plain bitmap draw, no offscreen layers. Page scroll moves them: bg 36dp, clock 96dp, fg 140dp (max: the photo's
+  spare height). The fg may only move **up** relative to the bg (it's solid from its skyline down, so it always
+  covers the bg's copy of the land); sideways/down offsets would show a double edge.
+- Everything behind the apps (depth stack + the apps page's `PanelScrim`) sits in one Box whose layer is
+  `Offscreen` while `pageAnim`/`enter` aren't running (one cached full-screen pass per frame) and `Auto` while
+  they run (layers draw directly; re-rendering a layer every frame would cost more).
 - The clock stays behind the apps on page 1 (alpha 0.6); the apps page carries its own dark gradient (`PanelScrim`).
 - Wallpapers: `tools/wallpapers/make.py` + `wallpapers.json` (Wikimedia Featured Pictures). Depth Anything V2 base
   (ONNX, CPU) → land = depth > tau, connected to the bottom edge → colour guided filter on the photo → mask.
   Output: `NN.webp` 1920x1360 (screen + 140dp parallax room) + `NN_fg.webp` (alpha only, from row `fgTop`) + `index.json`.
-  `zoom/x0/y0` put the skyline across the lower ~30% of the digits (scored with the real clock glyphs: Oswald 600,
-  560 px, centre + 20 px at 1080p = `ClockFontSize`/`ClockCenterOffset`). Mixed-depth scenes (forest in front of a
+  `place.py` chooses `zoom/x0/y0`: every digit (all ten overlaid, Oswald 600, 560 px, centre + 20 px at 1080p =
+  `ClockFontSize`/`ClockCenterOffset`) at most ~25% hidden, also with the screensaver's land lift (+24 px) and clock
+  wander (±16 px); closest to the old placement, mean overlap ~15%. `place.py --check sheet.jpg` measures the built
+  assets. Before (v1.0.17) some digits were 80–100% hidden. Mixed-depth scenes (forest in front of a
   far mountain) give inconsistent masks: dropped those.
 - Clock fonts: `assets/fonts` (OFL), subset to digits/colon with `pyftsubset`; sized so every font's digits are as tall
   as Oswald's. Drawn with a native `Paint` (shadow layer) inside an offscreen layer: re-rasterised once a minute.
@@ -123,8 +130,9 @@
   (`ScreensaverActivity`, same scene).
 - Compose in a DreamService: the service is its own `LifecycleOwner` + `SavedStateRegistryOwner`, set on the
   ComposeView and the decor view. RESUMED from `onDreamingStarted`.
-- Drift at ~12 fps (sub-pixel motion doesn't need more): land rises 0–44dp vs sky 0–14dp (90 s), clock wanders ±28dp
-  (240 s) against burn-in. Measured: 125 frames/10 s, 0 janky, GPU 9 ms.
+- Drift at 20 fps: sky 0–10dp, clock 0–22dp, land 0–34dp (36 s cycle), clock wanders ±8dp (160 s; photos change every minute, so burn-in is no concern).
+  Photo every `screensaverPhotoSeconds` (15 s–5 min, default 60). "Now playing" card (bottom start) from
+  `NowPlaying` (media sessions, needs the notification-listener grant), shown only while playing.
 - Videos keep the screen on: our YouTube sets `FLAG_KEEP_SCREEN_ON` while a `<video>` plays (`playing` message from
   tvhome.js), cameras always.
 
@@ -148,6 +156,11 @@
 - Restart the app process without `force-stop` (which drops the accessibility service): `am crash <pid>`.
 - After the fix (classic layout, 2 cameras): idle 0 frames; D-pad ~6% janky, p99 ~60 ms (was 45–65%, p99 150 ms).
   PSS ~143 MB (odex + background layer).
+
+- Clock layout, 2026-11-09 (v1.0.17 → 1.0.18), D-pad on the apps page: GPU p50 34 ms → ~14 ms. Found by turning
+  parts off one at a time: photo layer ~10 ms, land layer ~10 ms, `PanelScrim` ~17 ms (each a full-screen blended
+  pass); the cameras made no difference (an earlier "kill :camera → fast" was GPU DVFS noise: the same frames
+  measure 12–35 ms depending on the GPU clock, so compare A/B back to back).
 
 ## Control center / overlays (stage 6)
 - Remote has no spare buttons (keylayout: POWER, ASSIST, D-pad, BACK, HOME, volume/mute, MACRO_1, BUTTON_3 YouTube,

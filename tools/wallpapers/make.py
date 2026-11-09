@@ -11,6 +11,7 @@ photo scaled to 1920 px wide (x zoom), so the skyline crosses the lower part of 
 
 Usage (Python 3.10+, pip install numpy onnxruntime opencv-python-headless pillow huggingface_hub):
   python tools/wallpapers/make.py <cache dir>
+Run place.py first to (re)choose zoom/x0/y0, so the land never hides more than a quarter of a digit.
 """
 import json, os, re, sys, urllib.parse, urllib.request
 import cv2, numpy as np, onnxruntime as ort
@@ -61,7 +62,10 @@ def main(cache):
     from huggingface_hub import hf_hub_download
     model = hf_hub_download("onnx-community/depth-anything-v2-base", "onnx/model.onnx", local_dir=os.path.join(cache, "da2b"))
     sess = ort.InferenceSession(model, providers=["CPUExecutionProvider"])
-    spec = json.load(open(os.path.join(os.path.dirname(__file__), "wallpapers.json"), encoding="utf-8"))
+    spec = [s for s in json.load(open(os.path.join(os.path.dirname(__file__), "wallpapers.json"), encoding="utf-8")) if not s.get("drop")]
+    for f in os.listdir(OUT):  # files of photos that were dropped or renumbered
+        if f.endswith(".webp"):
+            os.remove(os.path.join(OUT, f))
     index, credits = [], ["# Wallpaper credits", "", "Photos from Wikimedia Commons Featured Pictures, used under their free licences.",
                           "The app shows them cropped and split into a background and a foreground layer.", ""]
     for n, s in enumerate(spec, 1):

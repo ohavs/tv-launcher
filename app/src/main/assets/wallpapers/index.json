@@ -3,7 +3,7 @@
   "id": "01",
   "title": "Mount Shasta at sunset",
   "credit": "Frank Schulenburg · CC BY-SA 4.0",
-  "fgTop": 488
+  "fgTop": 579
  },
  {
   "id": "02",
@@ -15,7 +15,7 @@
   "id": "03",
   "title": "Pic du Midi d'Ossau",
   "credit": "Myrabella · CC BY-SA 3.0",
-  "fgTop": 339
+  "fgTop": 377
  },
  {
   "id": "04",
@@ -25,80 +25,56 @@
  },
  {
   "id": "05",
-  "title": "Watzmann",
-  "credit": "Jörg Braukmann · CC BY-SA 4.0",
-  "fgTop": 568
- },
- {
-  "id": "06",
-  "title": "Flatirons sunrise",
-  "credit": "Tyler Cipriani · CC BY-SA 4.0",
-  "fgTop": 193
- },
- {
-  "id": "07",
   "title": "Westerhever Lighthouse",
   "credit": "Richard Bartz · CC BY-SA 3.0",
   "fgTop": 335
  },
  {
-  "id": "08",
-  "title": "Lake Mystery, New Zealand",
-  "credit": "Michal Klajban · CC BY-SA 4.0",
-  "fgTop": 418
- },
- {
-  "id": "09",
+  "id": "06",
   "title": "Teide",
   "credit": "Flocci Nivis · CC BY-SA 4.0",
-  "fgTop": 623
+  "fgTop": 663
  },
  {
-  "id": "10",
+  "id": "07",
   "title": "Sweet Bread Mountain",
   "credit": "Donatas Dabravolskas · CC BY-SA 4.0",
-  "fgTop": 408
+  "fgTop": 453
  },
  {
-  "id": "11",
-  "title": "Passo Pordoi",
-  "credit": "Bops92 · CC BY-SA 4.0",
-  "fgTop": 95
- },
- {
-  "id": "12",
+  "id": "08",
   "title": "Cap Leucate Lighthouse",
   "credit": "H. Zell · CC BY-SA 3.0",
   "fgTop": 151
  },
  {
-  "id": "13",
+  "id": "09",
   "title": "Ararat and Khor Virap",
   "credit": "Diego Delso · CC BY-SA 4.0",
-  "fgTop": 407
+  "fgTop": 457
  },
  {
-  "id": "14",
+  "id": "10",
   "title": "Ingush towers at sunset",
   "credit": "Vyacheslav Argenberg · CC BY 4.0",
-  "fgTop": 340
+  "fgTop": 434
  },
  {
-  "id": "15",
+  "id": "11",
   "title": "Watzmann above the fog",
   "credit": "Jörg Braukmann · CC BY-SA 4.0",
-  "fgTop": 349
+  "fgTop": 513
  },
  {
-  "id": "16",
+  "id": "12",
   "title": "Teide from the north-east",
   "credit": "Thomas Wolf, www.foto-tw.de · CC BY-SA 3.0 de",
-  "fgTop": 481
+  "fgTop": 529
  },
  {
-  "id": "17",
+  "id": "13",
   "title": "Matanuska-Susitna, Alaska",
   "credit": "Ross Fowler from Sydney, Australia · CC BY 2.0",
-  "fgTop": 138
+  "fgTop": 507
  }
 ]

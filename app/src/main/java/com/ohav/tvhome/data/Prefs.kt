@@ -63,6 +63,11 @@ class Prefs(context: Context) {
         get() = sp.getString("clockFont", "Oswald")!!
         set(v) = sp.edit().putString("clockFont", v).apply()
 
+    /** Seconds between photos in the screensaver. */
+    var screensaverPhotoSeconds: Int
+        get() = sp.getInt("saverPhotoSec", 60)
+        set(v) = sp.edit().putInt("saverPhotoSec", v).apply()
+
     /** Our screensaver replaces the system one (needs WRITE_SECURE_SETTINGS, granted over adb). */
     var screensaver: Boolean
         get() = sp.getBoolean("screensaver", false)
@@ -124,6 +129,7 @@ class Prefs(context: Context) {
         const val QUIET = "quiet"
         val WALLPAPER_CHOICES = listOf(1, 5, 15, 30, 60, 0)
         val SCREENSAVER_CHOICES = listOf(1, 2, 5, 10, 15, 30)
+        val SAVER_PHOTO_CHOICES = listOf(15, 30, 60, 120, 300)
 
         private val FAVORITES = listOf(
             "com.netflix.ninja",

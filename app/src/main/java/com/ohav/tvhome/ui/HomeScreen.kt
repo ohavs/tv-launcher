@@ -7,6 +7,10 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -109,10 +113,13 @@ private val WidgetHeight = 90.dp
 private val ClassicOrder = listOf(Section.Top, Section.Widgets, Section.Apps, Section.Content)
 private val CinemaOrder = listOf(Section.Top, Section.Widgets, Section.Content, Section.Apps)
 private val ClockOrder = listOf(Section.Top, Section.Hero, Section.Widgets, Section.Apps, Section.Content)
-/** Clock layout parallax: how far each depth layer rises while the page scrolls down a whole screen. */
-private val BgShift = 60.dp
-private val ClockShift = 80.dp
-private val FgShift = 130.dp
+/**
+ * Clock layout parallax: how far each depth layer rises while the page scrolls down a whole screen. The land may
+ * rise at most the photo's spare height (140dp at 1080p), and never less than the sky.
+ */
+private val BgShift = 36.dp
+private val ClockShift = 96.dp
+private val FgShift = 140.dp
 
 private val ClassicScrim = Brush.verticalGradient(
     0f to Color.Black.copy(alpha = 0.50f),
@@ -174,6 +181,8 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
     /** Clock layout: 0 = the big clock, 1 = the apps page. Follows focus; read only while drawing. */
     var page by remember { mutableIntStateOf(0) }
     val pageAnim = remember { Animatable(0f) }
+    /** Height of the header row (the apps page starts below it). Read only while drawing. */
+    var headerPx by remember { mutableIntStateOf(0) }
 
     val topIds = listOf("top:all", "top:cc", "top:settings")
     val cams = home.camera
@@ -290,9 +299,14 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
             }
 
             if (clock) {
+                // Everything behind the apps. While the page rests it is one cached picture: one full-screen pass
+                // per frame instead of four (the GPU is fill-rate bound); while it moves, the layers draw directly.
+                Box(Modifier.fillMaxSize().graphicsLayer {
+                    compositingStrategy = if (pageAnim.isRunning || enter.isRunning) CompositingStrategy.Auto else CompositingStrategy.Offscreen
+                }) {
                 // Depth: photo -> big clock -> the land in front of it, each rising at its own speed (parallax).
                 Isolated {
-                    val wp by rememberWallpaper(withMask = true) { home.prefs.wallpaperMinutes }
+                    val wp by rememberWallpaper(withMask = true, shade = DepthShade) { home.prefs.wallpaperMinutes * 60 }
                     fun GraphicsLayerScope.enterScale() {
                         val s = 1.06f - 0.06f * EaseOut.transform(enter.value)
                         scaleX = s
@@ -312,6 +326,12 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                         enterScale()
                         translationY = -pageAnim.value * FgShift.toPx()
                     })
+                }
+                // The apps page's shade, rising with it from below the header.
+                Box(Modifier.fillMaxSize().graphicsLayer { translationY = (1f - pageAnim.value) * screenH.toPx() }.drawBehind {
+                    val top = 30.dp.toPx() + headerPx
+                    translate(top = top) { drawRect(PanelScrim, size = Size(size.width, size.height - top)) }
+                })
                 }
                 ClockInfo(home.weather, cityOf(home.prefs.cityId)) {
                     val p = pageAnim.value
@@ -369,7 +389,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
             }
 
             Column(Modifier.fillMaxSize().padding(top = 30.dp)) {
-                Box(Modifier.fillMaxWidth().padding(horizontal = sidePad)) {
+                Box(Modifier.fillMaxWidth().padding(horizontal = sidePad).onSizeChanged { headerPx = it.height }) {
                     if (clock) {
                         // Date and weather join the header on the apps page; the big clock stays behind the apps.
                         ClockBlock(
@@ -395,7 +415,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                 // Clock layout: everything below the header is the second page, a screen further down.
                 Column(
                     Modifier.weight(1f).then(
-                        if (clock) Modifier.graphicsLayer { translationY = (1f - pageAnim.value) * screenH.toPx() }.background(PanelScrim)
+                        if (clock) Modifier.graphicsLayer { translationY = (1f - pageAnim.value) * screenH.toPx() }
                         else Modifier
                     )
                 ) {
@@ -583,7 +603,7 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
     LaunchedEffect(Unit) {
         snapshotFlow { page }.collectLatest { target ->
             if (home.quiet) pageAnim.snapTo(target.toFloat())
-            else pageAnim.animateTo(target.toFloat(), spring(dampingRatio = 1f, stiffness = 110f))
+            else pageAnim.animateTo(target.toFloat(), spring(dampingRatio = 1f, stiffness = 300f))
         }
     }
 

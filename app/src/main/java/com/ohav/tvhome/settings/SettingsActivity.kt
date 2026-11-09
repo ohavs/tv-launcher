@@ -101,6 +101,7 @@ private fun SettingsScreen() {
     var clockFont by remember { mutableStateOf(ClockFont.of(prefs.clockFont)) }
     var saverOn by remember { mutableStateOf(Screensaver.isOurs(context)) }
     var saverMin by remember { mutableStateOf(Screensaver.minutes(context)) }
+    var saverPhotoSec by remember { mutableStateOf(prefs.screensaverPhotoSeconds) }
     var saverError by remember { mutableStateOf(false) }
     var keyTargets by remember { mutableStateOf(RemoteKey.entries.associateWith { prefs.keyTarget(it) }) }
     var pickingKey by remember { mutableStateOf<RemoteKey?>(null) }
@@ -299,6 +300,15 @@ private fun SettingsScreen() {
                         val choices = Prefs.SCREENSAVER_CHOICES
                         val next = choices.firstOrNull { it > saverMin } ?: choices.first()
                         if (Screensaver.setMinutes(context, next)) saverMin = next else saverError = true
+                    }
+                    MenuRow(
+                        stringResource(R.string.saver_photo_every),
+                        value = if (saverPhotoSec < 60) stringResource(R.string.every_sec, saverPhotoSec)
+                        else stringResource(R.string.every_min, saverPhotoSec / 60),
+                    ) {
+                        val choices = Prefs.SAVER_PHOTO_CHOICES
+                        saverPhotoSec = choices.firstOrNull { it > saverPhotoSec } ?: choices.first()
+                        prefs.screensaverPhotoSeconds = saverPhotoSec
                     }
                     MenuRow(stringResource(R.string.screensaver_preview)) {
                         context.startActivity(Intent(context, ScreensaverActivity::class.java))
