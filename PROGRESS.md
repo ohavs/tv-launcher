@@ -1,8 +1,8 @@
 # PROGRESS
 
 ## Now
-- Live: **TV Home v1.0.18** on the TV (Google TV Streamer, `10.0.0.43:5555`). Repo https://github.com/ohavs/tv-launcher (public).
-- **Next:** verify CI release v1.0.19 + "בדוק עדכונים" on TV + screenshot of the camera swap (backup/motion/row.png) → then ROADMAP 10 → G (Google Photos/Drive) → 9 → L3 → P (parking/cars) → phone.
+- Live: **TV Home v1.0.19** on the TV (Google TV Streamer, `10.0.0.43:5555`). Repo https://github.com/ohavs/tv-launcher (public).
+- **Next: ROADMAP שלב 10** (polish/perf) → G (Google Photos/Drive) → 9 → L3 → P (parking/cars) → phone. → G (Google Photos/Drive) → 9 → L3 → P (parking/cars) → phone.
 - L4 confirmed by user (2026-11-07): signed in, no ads in the account.
 - TV is set to: layout **Clock**, font Oswald, **our screensaver after 1 min**, photo every 1 min, cameras primary = channel 2.
 
@@ -12,7 +12,8 @@
 - Context order: camera with motion → first slot + "תנועה" badge (cards keyed by channel); playing track → first.
 - Motion = inter-frame bytes of sub streams (`MotionWatch`, no decoding, ~3% of a core for 8 channels). Verified on TV:
   hits on street cams 2/4 matched passing cars, no false hits on other channels. Toggle in Settings → cameras.
-- Pushed; CI/release/update check not verified yet (usage limit).
+- Released v1.0.19 (CI #19); installed the release APK + .dm on the TV; "בדוק עדכונים" = up to date; settings row seen.
+  Camera swap verified: a camera that only moves keeps streaming. Not seen: "now playing first" with real playback.
 
 ## Session before (2026-11-09) — performance + screensaver upgrade (stage 6d)
 - User: Down from the big clock felt laggy ("performance first, always"); land hid too much of the clock;
