@@ -207,6 +207,21 @@
   passed over AIDL. Starts 1.2 s after home shows, stops on `onStop`. Full screen = `CameraActivity` (also `:camera`).
 - Settings text fields: `TextRow` (row → field on OK) so D-pad browsing doesn't pop the keyboard; IME shows Latin.
 
+## Smart dashboard (L2b, v1.0.19)
+- **Google Home APIs can't run on the Streamer** (tested 2026-11-09, SDK 1.11.1 = `play-services-home[-types]:17.1.0`,
+  a Maven-layout zip at `storage.googleapis.com/home_sdk_android/`, not on Google Maven; needs Kotlin ≥ 2.3, metadata 2.4):
+  `requestPermissions` → `Home.Permissions.API is not available on this device` (API_UNAVAILABLE) before any OAuth.
+  TV GMS 26.44 only ships the hub side (`home.matter.*COMMISSIONING*`, `InteractionApiPersistentService`).
+  dreamx `content://com.google.android.libraries.tv.smarthome.core.state.SmartHomeStateContentProvider/smart_home_state`
+  returns nothing. → device data must come from the phone (Home APIs work there; needs a Cloud OAuth client, Android
+  type, package + SHA-1 `6D:92:54:1A:45:F6:EB:93:29:7E:72:A3:34:ED:63:A5:D6:E7:C8:8A`, consent screen test user).
+- Dashboard row is 864dp (960 − 2×48): 2 cameras (160) + all-cameras (117) + now playing (279) + play/pause (52) + gaps
+  already fill it, so the Google Home card (225, opens `OPEN_SMART_HOME`) shows only when there is no track.
+- DVR exposes only RTSP 554 (80/443/6036/8000/8080/9000/34567/37777… closed): no motion events → `MotionWatch` (`:camera`)
+  keeps one RTSP-over-TCP session per channel (sub stream) and sums inter-frame bytes (RTP ts/marker, key frames dropped),
+  2 s windows vs a baseline (fast down, slow up); motion = 2.5× and +3 KB/s; ends 12 s after the last hit.
+  `MotionDetector.DEBUG = true` logs every window (`logcat -s Motion`).
+
 ## Self-update
 - Releases `v1.0.<run>`; asset `tv-home.apk`; PackageInstaller session; first adb-installed copy needs a confirm dialog.
 - `appops set com.ohav.tvhome REQUEST_INSTALL_PACKAGES allow` (install script).

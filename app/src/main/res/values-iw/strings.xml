@@ -49,6 +49,9 @@
     <string name="not_allowed">לא מאושר (להריץ install-launcher.cmd)</string>
     <string name="cameras">מצלמות</string>
     <string name="camera_on_dashboard">מצלמה בדשבורד</string>
+    <string name="camera_motion">מצלמה עם תנועה עוברת קדימה</string>
+    <string name="motion">תנועה</string>
+    <string name="smart_home_hint">פתיחת לוח הבית</string>
     <string name="dvr_address">כתובת ה-DVR</string>
     <string name="dvr_user">שם משתמש</string>
     <string name="dvr_password">סיסמה</string>

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -76,6 +77,9 @@ fun CameraCard(
     onFocused: () -> Unit,
     onClick: (Rect) -> Unit,
     height: Dp,
+    motion: Boolean = false,
+    /** Wait before connecting, so the streams never slow the home screen's entrance. */
+    startDelayMs: Long = 1200L,
 ) {
     val context = LocalContext.current
     val view = remember { SurfaceSlot() }
@@ -104,7 +108,7 @@ fun CameraCard(
         state = CAM_CONNECTING
         val surface = view.surface ?: return@LaunchedEffect
         if (!started || !active) return@LaunchedEffect
-        delay(1200L + slot * 400L)
+        delay(startDelayMs)
         val link = runCatching { CameraLink.connect(context.applicationContext) { state = CAM_ERROR } }.getOrElse {
             state = CAM_ERROR
             return@LaunchedEffect
@@ -169,6 +173,18 @@ fun CameraCard(
                     color = Color.White.copy(alpha = 0.75f + 0.25f * f), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
                 )
             }
+        }
+        if (motion) {
+            Text(
+                stringResource(R.string.motion),
+                color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(6.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(Color(0xFFE5484D))
+                    .padding(horizontal = 7.dp, vertical = 2.dp),
+            )
         }
     }
 }

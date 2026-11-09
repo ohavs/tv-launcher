@@ -107,6 +107,7 @@ private fun SettingsScreen() {
     var pickingKey by remember { mutableStateOf<RemoteKey?>(null) }
     val cams = remember { CameraPrefs(context) }
     var camEnabled by remember { mutableStateOf(cams.enabled) }
+    var camMotion by remember { mutableStateOf(cams.motion) }
     var camHost by remember { mutableStateOf(cams.host) }
     var camUser by remember { mutableStateOf(cams.user) }
     var camPass by remember { mutableStateOf(cams.pass) }
@@ -359,6 +360,10 @@ private fun SettingsScreen() {
                     MenuRow(stringResource(R.string.camera_on_dashboard), value = stringResource(if (camEnabled) R.string.on else R.string.off)) {
                         camEnabled = !camEnabled
                         cams.enabled = camEnabled
+                    }
+                    MenuRow(stringResource(R.string.camera_motion), value = stringResource(if (camMotion) R.string.on else R.string.off)) {
+                        camMotion = !camMotion
+                        cams.motion = camMotion
                     }
                     val notSet = stringResource(R.string.not_set)
                     TextRow(stringResource(R.string.dvr_address), camHost, notSet) {

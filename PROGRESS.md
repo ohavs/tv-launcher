@@ -2,11 +2,19 @@
 
 ## Now
 - Live: **TV Home v1.0.18** on the TV (Google TV Streamer, `10.0.0.43:5555`). Repo https://github.com/ohavs/tv-launcher (public).
-- **Next: ROADMAP שלב L2b** (smart dashboard) → then 10 → G (Google Photos/Drive) → 9 → L3 → P (parking/cars) → phone.
+- **Next:** verify CI release v1.0.19 + "בדוק עדכונים" on TV + screenshot of the camera swap (backup/motion/row.png) → then ROADMAP 10 → G (Google Photos/Drive) → 9 → L3 → P (parking/cars) → phone.
 - L4 confirmed by user (2026-11-07): signed in, no ads in the account.
 - TV is set to: layout **Clock**, font Oswald, **our screensaver after 1 min**, photo every 1 min, cameras primary = channel 2.
 
-## Last session (2026-11-09) — performance + screensaver upgrade (stage 6d)
+## Last session (2026-11-09, evening) — L2b smart dashboard
+- Google Home APIs don't work on the Streamer (`Home.Permissions.API is not available`) → devices only via phone (stage 3).
+  Fallback (user's choice): Google Home card opens the built-in panel; shown when no track (no room).
+- Context order: camera with motion → first slot + "תנועה" badge (cards keyed by channel); playing track → first.
+- Motion = inter-frame bytes of sub streams (`MotionWatch`, no decoding, ~3% of a core for 8 channels). Verified on TV:
+  hits on street cams 2/4 matched passing cars, no false hits on other channels. Toggle in Settings → cameras.
+- Pushed; CI/release/update check not verified yet (usage limit).
+
+## Session before (2026-11-09) — performance + screensaver upgrade (stage 6d)
 - User: Down from the big clock felt laggy ("performance first, always"); land hid too much of the clock;
   parallax too slow (home transition + screensaver); screensaver: "now playing" from Spotify + photo interval setting.
 - User choices: now playing = what plays on the TV (MediaSession, no Spotify login); per-digit cap ~25%; both parallaxes faster.

@@ -28,6 +28,7 @@ data class CameraConfig(
     val format: DvrFormat,
     /** Channels to show, in order; the first one is on the dashboard. */
     val channels: List<Int>,
+    val motion: Boolean = true,
 ) {
     fun url(channel: Int, sub: Boolean): String {
         val auth = if (user.isEmpty()) "" else Uri.encode(user) + ":" + Uri.encode(pass) + "@"
@@ -41,6 +42,10 @@ class CameraPrefs(context: Context) {
     var enabled: Boolean
         get() = sp.getBoolean("enabled", true)
         set(v) = sp.edit().putBoolean("enabled", v).apply()
+    /** A camera with motion moves to the front of the dashboard (sub streams watched, never decoded). */
+    var motion: Boolean
+        get() = sp.getBoolean("motion", true)
+        set(v) = sp.edit().putBoolean("motion", v).apply()
     var host: String
         get() = sp.getString("host", "10.0.0.14")!!
         set(v) = sp.edit().putString("host", v.trim()).apply()
@@ -77,7 +82,7 @@ class CameraPrefs(context: Context) {
         val primary = primary
         val channels = found.filter { it !in hidden }.sortedBy { if (it == primary) 0 else 1 }
         if (channels.isEmpty()) return null
-        return CameraConfig(host, user, pass, format, channels)
+        return CameraConfig(host, user, pass, format, channels, motion)
     }
 }
 
@@ -142,11 +147,12 @@ object RtspProbe {
             val (first, headers) = send(1, null)
             if (first != 401) return first
             val challenge = headers["www-authenticate"] ?: return first
-            return send(2, authorization(challenge, uri, user, pass)).first
+            return send(2, authorization("DESCRIBE", challenge, uri, user, pass)).first
         }
     }
 
-    private fun authorization(challenge: String, uri: String, user: String, pass: String): String {
+    /** Authorization header value for [method] on [uri], answering a Basic or Digest [challenge]. */
+    fun authorization(method: String, challenge: String, uri: String, user: String, pass: String): String {
         if (challenge.startsWith("Basic", ignoreCase = true)) {
             return "Basic " + android.util.Base64.encodeToString("$user:$pass".toByteArray(), android.util.Base64.NO_WRAP)
         }
@@ -154,7 +160,7 @@ object RtspProbe {
         val realm = params["realm"].orEmpty()
         val nonce = params["nonce"].orEmpty()
         val ha1 = md5("$user:$realm:$pass")
-        val ha2 = md5("DESCRIBE:$uri")
+        val ha2 = md5("$method:$uri")
         return "Digest username=\"$user\", realm=\"$realm\", nonce=\"$nonce\", uri=\"$uri\", response=\"${md5("$ha1:$nonce:$ha2")}\"" +
             (params["opaque"]?.let { ", opaque=\"$it\"" } ?: "")
     }

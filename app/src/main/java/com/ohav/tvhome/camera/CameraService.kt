@@ -63,6 +63,7 @@ fun ExoPlayer.playRtsp(url: String) {
 class CameraService : Service() {
     private val main = Handler(Looper.getMainLooper())
     private val slots = HashMap<Int, Slot>()
+    private var motion: MotionWatch? = null
 
     private inner class Slot(val url: String, val listener: ICameraListener) : Player.Listener {
         val player: ExoPlayer = liveCameraPlayer(this@CameraService, audio = false)
@@ -105,6 +106,19 @@ class CameraService : Service() {
             main.post { slots.remove(slot)?.release(); done.countDown() }
             done.await(1, TimeUnit.SECONDS)
         }
+
+        override fun watchMotion(urls: Array<String>, channels: IntArray, listener: IMotionListener) {
+            main.post {
+                motion?.stop()
+                motion = MotionWatch(urls.toList(), channels.toList()) { ch, moving ->
+                    runCatching { listener.onMotion(ch, moving) }
+                }.also { it.start() }
+            }
+        }
+
+        override fun stopMotion() {
+            main.post { motion?.stop(); motion = null }
+        }
     }
 
     private fun start(id: Int, surface: Surface, url: String, listener: ICameraListener) {
@@ -120,6 +134,8 @@ class CameraService : Service() {
     private fun releaseAll() {
         slots.values.forEach { it.release() }
         slots.clear()
+        motion?.stop()
+        motion = null
     }
 
     override fun onBind(intent: Intent): IBinder = binder

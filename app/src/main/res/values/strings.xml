@@ -49,6 +49,9 @@
     <string name="not_allowed">Not allowed (run install-launcher.cmd)</string>
     <string name="cameras">Cameras</string>
     <string name="camera_on_dashboard">Camera on the dashboard</string>
+    <string name="camera_motion">Motion moves a camera to the front</string>
+    <string name="motion">Motion</string>
+    <string name="smart_home_hint">Opens the Google Home panel</string>
     <string name="dvr_address">DVR address</string>
     <string name="dvr_user">User name</string>
     <string name="dvr_password">Password</string>

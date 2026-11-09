@@ -186,11 +186,31 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
 
     val topIds = listOf("top:all", "top:cc", "top:settings")
     val cams = home.camera
-    val dashCams = cams?.channels?.take(2).orEmpty()
+    val camsActive = !showAll && (!clock || page == 1)
+    val camMotion = rememberCameraMotion(cams, camsActive)
+    // A camera with motion takes the first slot, but never while focus is on the dashboard row (no jumps
+    // under the cursor): the order catches up once focus leaves it.
+    var motionCam by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(Unit) {
+        snapshotFlow { camMotion.value.firstOrNull() to (section == Section.Widgets) }
+            .collect { (m, onRow) -> if (!onRow) motionCam = m }
+    }
+    val dashCams = cams?.channels.orEmpty().let { all ->
+        val m = motionCam?.takeIf { it in all }
+        if (m == null) all.take(2) else listOf(m) + (all - m).take(1)
+    }
+    // Context order: a camera with motion, else whatever is playing, comes first. Google Home fills the
+    // other end when nothing is playing (no room for both).
+    val playingFirst = track?.playing == true && motionCam == null
+    val showSmartHome = track == null && home.smartHome != null
     val widgetIds = buildList {
-        dashCams.indices.forEach { add("w:cam$it") }
-        if (dashCams.size > 1) add("w:allcams")
-        if (track != null) { add("w:now"); add("w:pp") }
+        val camIds = buildList {
+            dashCams.indices.forEach { add("w:cam$it") }
+            if (dashCams.size > 1) add("w:allcams")
+        }
+        val nowIds = if (track != null) listOf("w:now", "w:pp") else emptyList()
+        if (playingFirst) { addAll(nowIds); addAll(camIds) } else { addAll(camIds); addAll(nowIds) }
+        if (showSmartHome) add("w:home")
     }
     fun ids(s: Section): List<String> = when (s) {
         Section.Top -> topIds
@@ -426,27 +446,42 @@ fun HomeScreen(home: HomeController, openSettings: () -> Unit) {
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        var i = 0
-                        if (cams != null) {
-                            dashCams.forEachIndexed { slot, channel ->
-                                val iCam = i++
-                                CameraCard(
-                                    cams, channel, slot, active = !showAll && (!clock || page == 1), req("w:cam$slot"),
-                                    { onFocused(Section.Widgets, iCam) },
-                                    { home.openCamera(channel, it) }, WidgetHeight,
-                                )
-                            }
-                            if (dashCams.size > 1) {
-                                val iAll = i++
-                                AllCamerasCard(cams.channels.size, req("w:allcams"), { onFocused(Section.Widgets, iAll) }, home::openCameraGrid, WidgetHeight)
+                        val camGroup = @Composable {
+                            if (cams != null) {
+                                // Keyed by channel (also its player slot): a camera that only changes place keeps
+                                // streaming; only one that motion brought in connects, and at once.
+                                dashCams.forEachIndexed { pos, channel ->
+                                    val iCam = widgetIds.indexOf("w:cam$pos")
+                                    key(channel) {
+                                        CameraCard(
+                                            cams, channel, slot = channel, active = camsActive, req("w:cam$pos"),
+                                            { onFocused(Section.Widgets, iCam) },
+                                            { home.openCamera(channel, it) }, WidgetHeight,
+                                            motion = channel == motionCam,
+                                            startDelayMs = if (channel == motionCam) 0L else 1200L + pos * 400L,
+                                        )
+                                    }
+                                }
+                                if (dashCams.size > 1) {
+                                    val iAll = widgetIds.indexOf("w:allcams")
+                                    AllCamerasCard(cams.channels.size, req("w:allcams"), { onFocused(Section.Widgets, iAll) }, home::openCameraGrid, WidgetHeight)
+                                }
                             }
                         }
+                        val nowGroup = @Composable {
+                            if (track != null) {
+                                val iNow = widgetIds.indexOf("w:now")
+                                val iPp = widgetIds.indexOf("w:pp")
+                                NowPlayingCard(track, req("w:now"), { onFocused(Section.Widgets, iNow) }, home::openNowPlaying, WidgetHeight)
+                                PlayPauseButton(track.playing, req("w:pp"), { onFocused(Section.Widgets, iPp) }, home.nowPlaying::playPause)
+                            }
+                        }
+                        if (playingFirst) { nowGroup(); camGroup() } else camGroup()
                         Spacer(Modifier.weight(1f))
-                        if (track != null) {
-                            val iNow = i++
-                            val iPp = i
-                            NowPlayingCard(track, req("w:now"), { onFocused(Section.Widgets, iNow) }, home::openNowPlaying, WidgetHeight)
-                            PlayPauseButton(track.playing, req("w:pp"), { onFocused(Section.Widgets, iPp) }, home.nowPlaying::playPause)
+                        if (!playingFirst) nowGroup()
+                        if (showSmartHome) {
+                            val iHome = widgetIds.indexOf("w:home")
+                            SmartHomeCard(req("w:home"), { onFocused(Section.Widgets, iHome) }, home::openSmartHome, WidgetHeight)
                         }
                     }
                 }
